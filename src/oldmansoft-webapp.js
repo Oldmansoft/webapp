@@ -160,12 +160,13 @@ oldmanWebApp = {
 	    }
 	    this.show = function () {
 	        initElement();
+	        element.stop(true, true);
 	        element.fadeIn(2000);
 	    }
 	    this.hide = function () {
 	        initElement();
-	        element.stop();
-	        element.hide();
+	        element.stop(true);
+	        element.fadeOut(200);
 	    }
 	},
 
@@ -186,7 +187,11 @@ oldmanWebApp = {
 			changeCall(getLink());
 		}
 		function hashChange() {
-			lastHash = fixHref(window.location.hash);
+		    var href = fixHref(window.location.hash);
+		    if (lastHash == href) {
+		        return;
+		    }
+		    lastHash = href;
 			callLeave();
 		}
 
