@@ -146,8 +146,7 @@ oldmanWebApp = {
 	},
 
 	loadingTip: new function () {
-	    var element,
-            setTimeoutLaterShow = null;
+	    var element;
 
 	    function initElement() {
 	        if (element != null) return;
@@ -161,24 +160,12 @@ oldmanWebApp = {
 	    }
 	    this.show = function () {
 	        initElement();
-	        element.show();
-	        setTimeout(function () {
-	            element.css("background-color", "rgba(0, 0, 0, 0.7)");
-	            $(".loading-tip-dialog").css("background-color", "rgba(245, 245, 245, 0.9)");
-	        }, 1);
+	        element.fadeIn(2000);
 	    }
 	    this.hide = function () {
-	        if (setTimeoutLaterShow != null) {
-	            clearTimeout(setTimeoutLaterShow);
-	            setTimeoutLaterShow = null;
-	        }
 	        initElement();
+	        element.stop();
 	        element.hide();
-	        element.css("background-color", "initial");
-	        $(".loading-tip-dialog").css("background-color", "initial");
-	    }
-	    this.laterShow = function (timeout) {
-	        setTimeoutLaterShow = setTimeout(this.show, timeout);
 	    }
 	},
 
@@ -273,9 +260,15 @@ oldmanWebApp = {
 	        }
 
 	        this.clear = function () {
-	            for (var i = context.length - 1; i > -1; i--) {
-	                context[i].event.inactive();
-	                context[i].event.unload();
+	            var i,
+                    event;
+
+	            for (i = context.length - 1; i > -1; i--) {
+	                event = context[i].event;
+	                if (event) {
+	                    event.inactive();
+	                    event.unload();
+	                }
 	            }
 	            context = [];
 	        }
@@ -337,26 +330,22 @@ oldmanWebApp = {
 	        }
 	        this.setLastLastHide = function () {
 	            var target = this.lastLast(),
-	                win,
-	                scrollTop,
-	                scrollLeft;
+	                win;
 
 	            if (!target.node) return;
 
 	            win = $(window);
-	            scrollTop = win.scrollTop();
-	            scrollLeft = win.scrollLeft();
-
-	            if (scrollTop > 0) target.scrollTop = scrollTop;
-	            if (scrollLeft > 0) target.scrollLeft = scrollLeft;
+	            target.scrollTop = win.scrollTop();
+	            target.scrollLeft = win.scrollLeft();
 	            target.node.hide();
 	        }
 	        this.setLastShow = function () {
 	            var target = this.last();
 	            if (!target.node) return false;
+	            target.event.active();
 	            target.node.show();
-	            if (target.scrollLeft > 0) $(window).scrollLeft(target.scrollLeft);
-	            if (target.scrollTop > 0) $(window).scrollTop(target.scrollTop);
+	            $(window).scrollLeft(target.scrollLeft);
+	            $(window).scrollTop(target.scrollTop);
 	            return true;
 	        }
 	        this.like = function (links) {
@@ -405,14 +394,16 @@ oldmanWebApp = {
 	            this.inactive = function () { };
 	        }
 	        var currentId = ++loadId;
-	        oldmanWebApp.loadingTip.laterShow(100);
+	        oldmanWebApp.loadingTip.show();
 	        $.ajax({
 	            mimeType: 'text/html; charset=utf-8',
 	            url: getAbsolutePath(link, lastLink),
 	            type: 'GET',
 	            timeout: oldmanWebApp.setting.timeover,
 	            success: function (data, textStatus, jqXHR) {
-	                if (currentId != loadId) return;
+	                if (currentId != loadId) {
+	                    return;
+	                }
 	                oldmanWebApp.loadingTip.hide();
 	                
 	                var json = jqXHR.getResponseHeader("X-Responded-JSON"),
@@ -459,7 +450,9 @@ oldmanWebApp = {
 	                oldmanWebApp.dealVisibleLoading();
 	            },
 	            error: function (jqXHR, textStatus, errorThrown) {
-	                if (currentId != loadId) return;
+	                if (currentId != loadId) {
+	                    return;
+	                }
 	                oldmanWebApp.loadingTip.hide();
 	                if (jqXHR.status == 401 && fnOnUnauthorized(link)) {
 	                    return;
