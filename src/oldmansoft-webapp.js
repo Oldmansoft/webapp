@@ -536,7 +536,7 @@ oldmanWebApp = {
 	                }
 	            } else {
 	                if (!links.dealNotStartWith(hrefs)) {
-	                    loadContent(hrefs[hrefs.length - 1], false, getPathHasAbsolutePathFromArray(hrefs, hrefs.length - 2));
+	                    loadContent(hrefs[hrefs.length - 1], true, getPathHasAbsolutePathFromArray(hrefs, hrefs.length - 2));
 	                }
 	            }
 	        }
