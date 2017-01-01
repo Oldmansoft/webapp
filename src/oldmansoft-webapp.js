@@ -327,6 +327,9 @@ oldmanWebApp = {
 	        this.pop = function () {
 	            return context.pop();
 	        }
+	        this.first = function () {
+	            return context[0];
+	        }
 	        this.last = function () {
 	            return context[context.length - 1];
 	        }
@@ -506,7 +509,7 @@ oldmanWebApp = {
 	            i,
 	            context;
 
-	        if (hrefs.length == 1 && links.count() < 2) {
+	        if (hrefs.length == 1 && links.first().link != hrefs[0]) {
 	            links.clear();
 	            links.push(link);
 	            loadContent(link);
