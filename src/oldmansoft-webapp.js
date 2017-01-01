@@ -509,7 +509,7 @@ oldmanWebApp = {
 	            i,
 	            context;
 
-	        if (hrefs.length == 1 && links.first().link != hrefs[0]) {
+	        if (hrefs.length == 1 && (links.count() == 0 || links.first().link != hrefs[0])) {
 	            links.clear();
 	            links.push(link);
 	            loadContent(link);
@@ -528,7 +528,7 @@ oldmanWebApp = {
 	                        loadContent(hrefs[hrefs.length - 1], hrefs.length > 1, getPathHasAbsolutePathFromArray(hrefs, hrefs.length - 2));
 	                    }
 	                } else if (links.count() < hrefs.length) {
-	                    for (i = links.count(); i < hrefs.length; i++) {
+	                    for (i = links.count() ; i < hrefs.length; i++) {
 	                        links.push(hrefs[i]);
 	                    }
 	                    loadContent(hrefs[hrefs.length - 1], true, getPathHasAbsolutePathFromArray(hrefs, hrefs.length - 2));
