@@ -291,8 +291,12 @@ oldmanWebApp = {
 	            }
 
 	            for (i = 0; i < context.length - 1; i++) {
-	                if (hrefs.length - 1 > i && context[i].link == hrefs[i]) {
-	                    retain.push(context[i]);
+	                if (hrefs.length - 1 > i) {
+	                    if (context[i].link == hrefs[i]) {
+	                        retain.push(context[i]);
+	                    } else {
+	                        retain.push(createItem(hrefs[i]));
+	                    }
 	                } else if (context[i].node) {
 	                    context[i].event.inactive();
 	                    context[i].event.unload();
@@ -391,7 +395,7 @@ oldmanWebApp = {
 	            if (array[i].substr(0, 1) == "/") return array[i];
 	        }
 	    }
-	    function loadContent(link, isFollow, lastLink, isRefresh) {
+	    function loadContent(link, isAdd, lastLink, isRefresh) {
 	        function _event() {
 	            this.load = function () { };
 	            this.unload = function () { };
@@ -438,7 +442,7 @@ oldmanWebApp = {
 	                        $(window).scrollTop(0);
 	                    }
 	                } else {
-	                    if (isFollow) {
+	                    if (isAdd) {
 	                        links.setLastLastHide();
 	                    } else {
 	                        element.empty();
@@ -482,7 +486,7 @@ oldmanWebApp = {
 	                        $(window).scrollTop(0);
 	                    }
 	                } else {
-	                    if (isFollow) {
+	                    if (isAdd) {
 	                        links.setLastLastHide();
 	                    } else {
 	                        element.empty();
@@ -532,7 +536,7 @@ oldmanWebApp = {
 	                }
 	            } else {
 	                if (!links.dealNotStartWith(hrefs)) {
-	                    loadContent(hrefs[hrefs.length - 1], hrefs.length > 1, getPathHasAbsolutePathFromArray(hrefs, hrefs.length - 2));
+	                    loadContent(hrefs[hrefs.length - 1], false, getPathHasAbsolutePathFromArray(hrefs, hrefs.length - 2));
 	                }
 	            }
 	        }
@@ -648,6 +652,13 @@ oldmanWebApp = {
 	            e.preventDefault();
 	            return;
 	        }
+
+	        if ($(this).hasClass("webapp-close")) {
+	            e.preventDefault();
+	            oldmanWebApp.viewClose();
+	            return;
+	        }
+
 	        if (!target && oldmanWebApp._isDealEmptyTarget) {
 	            e.preventDefault();
 	            oldmanWebApp.link.hash(href);
@@ -671,7 +682,9 @@ $app = {
     confirm: oldmanWebApp.dialog.confirm,
     message: oldmanWebApp.dialog.message,
     hash: oldmanWebApp.link.hash,
+    addHash: oldmanWebApp.link.addHash,
     loadScript: oldmanWebApp.scriptLoader.load,
+    loading: oldmanWebApp.loadingTip,
     event: oldmanWebApp.event,
     close: oldmanWebApp.viewClose,
     init: oldmanWebApp.init
