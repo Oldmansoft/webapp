@@ -1,4 +1,8 @@
-﻿var oldmanWebApp,
+﻿/*
+* v0.1.9 https://github.com/Oldmansoft/webapp
+* Copyright 2016 Oldmansoft, Inc; http://www.apache.org/licenses/LICENSE-2.0
+*/
+var oldmanWebApp,
     $app;
 
 oldmanWebApp = {
@@ -11,8 +15,10 @@ oldmanWebApp = {
         loading: "加载中"
     },
     _mainView: null,
+    _openView: null,
     _currentViewEvent: null,
     _isDealEmptyTarget: true,
+    messageBox: null,
 
     scriptLoader: new function () {
         var hasScripts = [];
@@ -40,65 +46,222 @@ oldmanWebApp = {
             else loadScript(arguments, 0, result);
             return result;
         }
-	},
+    },
 
-	blackBox: new function () {
-	    var isInit = false,
+    createRenderView: function(link){
+        return $("<div></div>").addClass("render-view").data("link", link);
+    },
+
+    createEvent: function () {
+        this.load = function () { };
+        this.unload = function () { };
+        this.active = function () { };
+        this.inactive = function () { };
+    },
+
+    linkManagement: function () {
+        var context = [];
+
+        function createItem(link) {
+            return {
+                link: link,
+                node: null,
+                scrollTop: 0,
+                scrollLeft: 0,
+                event: null
+            };
+        }
+
+        this.clear = function () {
+            var i,
+                event;
+
+            for (i = context.length - 1; i > -1; i--) {
+                event = context[i].event;
+                if (event) {
+                    event.inactive();
+                    event.unload();
+                }
+            }
+            context = [];
+        }
+        this.dealNotStartWith = function (hrefs) {
+            var retain = [],
+                result,
+                lastItem,
+                i;
+
+            if (context.length == 0) {
+                for (i = 0; i < hrefs.length; i++) {
+                    context.push(createItem(hrefs[i]));
+                }
+                return false;
+            }
+
+            for (i = 0; i < context.length - 1; i++) {
+                if (hrefs.length - 1 > i) {
+                    if (context[i].link == hrefs[i]) {
+                        retain.push(context[i]);
+                    } else {
+                        retain.push(createItem(hrefs[i]));
+                    }
+                } else if (context[i].node) {
+                    context[i].event.inactive();
+                    context[i].event.unload();
+                    context[i].node.remove();
+                }
+            }
+            for (i = context.length - 1; i < hrefs.length - 1; i++) {
+                retain.push(createItem(hrefs[i]));
+            }
+
+            lastItem = this.last();
+            if (lastItem.link == hrefs[hrefs.length - 1]) {
+                retain.push(lastItem);
+                result = true;
+            } else {
+                retain.push(createItem(hrefs[hrefs.length - 1]));
+                lastItem.event.inactive();
+                lastItem.event.unload();
+                lastItem.node.remove();
+                result = false;
+            }
+            context = retain;
+            return result;
+        }
+        this.push = function (link) {
+            context.push(createItem(link));
+        }
+        this.pop = function () {
+            return context.pop();
+        }
+        this.first = function () {
+            return context[0];
+        }
+        this.last = function () {
+            return context[context.length - 1];
+        }
+        this.lastLast = function () {
+            return context[context.length - 2];
+        }
+        this.setLastContext = function (node, event) {
+            this.last().node = node;
+            this.last().event = event;
+        }
+        this.setLastLastHide = function () {
+            var target = this.lastLast(),
+                win;
+
+            if (!target.node) return;
+
+            win = $(window);
+            target.scrollTop = win.scrollTop();
+            target.scrollLeft = win.scrollLeft();
+            target.node.hide();
+        }
+        this.setLastShow = function () {
+            var target = this.last();
+            if (!target.node) return false;
+            target.event.active();
+            target.node.show();
+            $(window).scrollLeft(target.scrollLeft);
+            $(window).scrollTop(target.scrollTop);
+            return true;
+        }
+        this.like = function (links) {
+            if (context.length == 0) return false;
+            for (var i = 0; i < context.length; i++) {
+                if (links.length == i) break;
+                if (context[i].link != links[i]) return false;
+            }
+            return true;
+        }
+        this.count = function () {
+            return context.length;
+        }
+        this.getBackLink = function () {
+            var link = [],
+                i;
+
+            link.push("");
+            for (i = 0; i < context.length - 1; i++) {
+                link.push(context[i].link);
+            }
+            return link.join("#");
+        }
+    },
+
+    box: function (className, isMiddle) {
+        var isInit = false,
 	        element,
+            core,
 	        stackHideNode = [],
 	        currentNode = null;
 
-	    function hide (event) {
-	        if (event && event.target != event.currentTarget) return;
+        function hide (event, fn) {
+            if (event && event.target != event.currentTarget) return;
 
-	        if (stackHideNode.length > 0) {
-	            currentNode = stackHideNode.pop();
-	            element.empty();
-	            element.append(currentNode);
-	        }
-	        else {
-	            element.hide();
-	            element.empty();
-	            currentNode = null;
-	        }
-	    }
-	    function initElement () {
-	        if (isInit) return;
-	        isInit = true;
-	        element = $("<div></div>").addClass("box-background");
-	        element.prependTo($("body"));
-	    }
-	    this.show = function (node) {
-	        initElement();
-	        if (currentNode) {
-	            if (currentNode.data("type") == "message") {
-	                throw "not allow show again after message show.";
-	            }
-	            stackHideNode.push(currentNode.detach());
-	        }
-	        currentNode = node;
-	        element.append(node);
-	        element.show();
-	    }
-	    this.hide = function (event) {
-	        hide(event);
-	    }
-	},
+            element.stop(true);
+            element.fadeOut(200, function () {
+                if (stackHideNode.length > 0) {
+                    currentNode = stackHideNode.pop();
+                    core.empty();
+                    core.append(currentNode);
+                    if (fn) fn();
+                    element.stop(true, true);
+                    element.fadeIn(200);
+                    return;
+                }
+
+                core.empty();
+                currentNode = null;
+                if (fn) fn();
+            });
+        }
+        function initElement () {
+            if (isInit) return;
+            isInit = true;
+            element = $("<div></div>").addClass(className).addClass("box-background");
+            if (isMiddle) {
+                core = $("<div></div>").addClass("layout-horizontal")
+                element.append(core);
+                element.append($("<div></div>").addClass("layout-vertical"));
+            } else {
+                core = element;
+            }
+            element.prependTo($("body"));
+        }
+        this.show = function (node) {
+            initElement();
+            if (currentNode) {
+                if (currentNode.data("type") == "message") {
+                    throw "not allow show again after message show.";
+                }
+                stackHideNode.push(currentNode.detach());
+            }
+            currentNode = node;
+            core.append(node);
+            element.stop(true, true);
+            element.fadeIn(200);
+        }
+        this.hide = function (event, fn) {
+            hide(event, fn);
+        }
+    },
 
 	dialog: new function () {
 	    function setButton(node) {
 	        this.set = function (text, fn) {
 	            var button = $("<button></button>").text(text);
 	            button.click(function (event) {
-	                oldmanWebApp.blackBox.hide(event);
-	                if (fn) fn();
+	                oldmanWebApp.messageBox.hide(event, fn);
 	            });
 	            node.append(button);
 	            return this;
 	        }
 	    }
 		function elementBuilder() {
-		    var element = $("<div></div>").addClass("box-dialog");
+		    var element = $("<div></div>").addClass("dialog-box").addClass("box-panel");
 		    this.setHead = function (title) {
 		        var header = $("<div></div>").addClass("dialog-header");
 		        header.append($("<h4></h4>").text(title));
@@ -125,21 +288,21 @@ oldmanWebApp = {
 		    }
 		    builder.setBody(content);
 		    builder.setFooter().set(oldmanWebApp.text.confirm, fn);
-		    oldmanWebApp.blackBox.show(builder.get("alert"));
+		    oldmanWebApp.messageBox.show(builder.get("alert"));
 		}
 		this.confirm = function (content, fnConfirm, fnCancel) {
 		    var builder = new elementBuilder();
 		    builder.setBody(content);
 		    builder.setFooter().set(oldmanWebApp.text.confirm, fnConfirm).set(oldmanWebApp.text.cancel, fnCancel);
-		    oldmanWebApp.blackBox.show(builder.get("confirm"));
+		    oldmanWebApp.messageBox.show(builder.get("confirm"));
 		}
 		this.message = function (content) {
 		    var builder = new elementBuilder();
 		    builder.setBody(content);
-		    oldmanWebApp.blackBox.show(builder.get("message"));
+		    oldmanWebApp.messageBox.show(builder.get("message"));
 		    return new function () {
 		        this.hide = function () {
-		            oldmanWebApp.blackBox.hide();
+		            oldmanWebApp.messageBox.hide();
 		        }
 		    }
 		}
@@ -150,18 +313,23 @@ oldmanWebApp = {
 
 	    function initElement() {
 	        if (element != null) return;
-	        element = $("<div></div>").addClass("loading-tip-background");
-	        var dialog = $("<div></div>").addClass("loading-tip-dialog"),
+	        element = $("<div></div>").addClass("loading-background").addClass("box-background");
+	        var dialog = $("<div></div>").addClass("loading-box").addClass("box-panel"),
                 text = $("<span></span>").text(oldmanWebApp.text.loading);
 
 	        dialog.append(text);
-	        element.append($("<div></div>").addClass("loading-tip-extra-horizontal").append(dialog)).append($("<div></div>").addClass("loading-tip-extra-vertical"));
+	        element.append($("<div></div>").addClass("layout-horizontal").append(dialog)).append($("<div></div>").addClass("layout-vertical"));
 	        element.prependTo($("body"));
 	    }
 	    this.show = function () {
 	        initElement();
 	        element.stop(true, true);
 	        element.fadeIn(2000);
+	        return new function () {
+	            this.hide = function () {
+	                oldmanWebApp.loadingTip.hide();
+	            }
+	        }
 	    }
 	    this.hide = function () {
 	        initElement();
@@ -244,144 +412,75 @@ oldmanWebApp = {
 		}
 	},
 
+	openArea: function () {
+	    var links = new oldmanWebApp.linkManagement();
+
+	    this.load = function (link) {
+	        var loading = oldmanWebApp.loadingTip.show();
+	        $.ajax({
+	            mimeType: 'text/html; charset=utf-8',
+	            url: link,
+	            type: 'GET',
+	            timeout: oldmanWebApp.setting.timeover
+	        }).done(function (data, textStatus, jqXHR) {
+	            loading.hide();
+	            var json = jqXHR.getResponseHeader("X-Responded-JSON"),
+	                    responded,
+	                    view;
+
+	            if (json) {
+	                responded = JSON.parse(json);
+	                if (responded.status == 401) {
+	                    if (!fnOnUnauthorized(responded.headers.location)) {
+	                        if (responded.headers && responded.headers.location) {
+	                            document.location = responded.headers.location;
+	                            return;
+	                        }
+	                    }
+	                }
+	            }
+	            if (links.count() > 0) {
+	                links.last().event.inactive();
+	            }
+
+	            oldmanWebApp._currentViewEvent = new oldmanWebApp.createEvent();
+	            view = oldmanWebApp.createRenderView(link).html(data);
+	            oldmanWebApp.windowBox.show(view);
+	            links.push(link);
+	            links.setLastContext(view, oldmanWebApp._currentViewEvent);
+	            oldmanWebApp._currentViewEvent.load();
+	            oldmanWebApp._currentViewEvent.active();
+	        }).fail(function () {
+	            loading.hide();
+	        });
+	    }
+
+	    this.close = function () {
+	        var current = links.pop();
+	        if (current) {
+	            current.event.inactive();
+	            current.event.unload();
+	        }
+	        oldmanWebApp.windowBox.hide(null, function () {
+	            if (current) {
+	                current.node.remove();
+	            }
+	            current = links.last();
+	            if (current) {
+	                oldmanWebApp.windowBox.show(current.node);
+	                current.event.active();
+	            }
+	        });
+	    }
+	},
+
 	viewArea: function (viewNode, link) {
 	    var loadId = 0,
             element = $(viewNode),
             defaultLink = link,
             fnOnUnauthorized = function () { return false; },
-            links = new linkManagement();
+            links = new oldmanWebApp.linkManagement();
 
-	    function linkManagement() {
-	        var context = [];
-
-	        function createItem(link) {
-	            return {
-	                link: link,
-	                node: null,
-	                scrollTop: 0,
-	                scrollLeft: 0,
-	                event: null
-	            };
-	        }
-
-	        this.clear = function () {
-	            var i,
-                    event;
-
-	            for (i = context.length - 1; i > -1; i--) {
-	                event = context[i].event;
-	                if (event) {
-	                    event.inactive();
-	                    event.unload();
-	                }
-	            }
-	            context = [];
-	        }
-	        this.dealNotStartWith = function (hrefs) {
-	            var retain = [],
-	                result,
-	                lastItem,
-	                i;
-
-	            if (context.length == 0) {
-	                for (i = 0; i < hrefs.length; i++) {
-	                    context.push(createItem(hrefs[i]));
-	                }
-	                return false;
-	            }
-
-	            for (i = 0; i < context.length - 1; i++) {
-	                if (hrefs.length - 1 > i) {
-	                    if (context[i].link == hrefs[i]) {
-	                        retain.push(context[i]);
-	                    } else {
-	                        retain.push(createItem(hrefs[i]));
-	                    }
-	                } else if (context[i].node) {
-	                    context[i].event.inactive();
-	                    context[i].event.unload();
-	                    context[i].node.remove();
-	                }
-	            }
-	            for (i = context.length - 1; i < hrefs.length - 1; i++) {
-	                retain.push(createItem(hrefs[i]));
-	            }
-
-	            lastItem = this.last();
-	            if (lastItem.link == hrefs[hrefs.length - 1]) {
-	                retain.push(lastItem);
-	                result = true;
-	            } else {
-	                retain.push(createItem(hrefs[hrefs.length - 1]));
-	                lastItem.event.inactive();
-	                lastItem.event.unload();
-	                lastItem.node.remove();
-	                result = false;
-	            }
-	            context = retain;
-	            return result;
-	        }
-	        this.push = function (link) {
-	            context.push(createItem(link));
-	        }
-	        this.pop = function () {
-	            return context.pop();
-	        }
-	        this.first = function () {
-	            return context[0];
-	        }
-	        this.last = function () {
-	            return context[context.length - 1];
-	        }
-	        this.lastLast = function () {
-	            return context[context.length - 2];
-	        }
-	        this.setLastContext = function (node, event) {
-	            this.last().node = node;
-	            this.last().event = event;
-	        }
-	        this.setLastLastHide = function () {
-	            var target = this.lastLast(),
-	                win;
-
-	            if (!target.node) return;
-
-	            win = $(window);
-	            target.scrollTop = win.scrollTop();
-	            target.scrollLeft = win.scrollLeft();
-	            target.node.hide();
-	        }
-	        this.setLastShow = function () {
-	            var target = this.last();
-	            if (!target.node) return false;
-	            target.event.active();
-	            target.node.show();
-	            $(window).scrollLeft(target.scrollLeft);
-	            $(window).scrollTop(target.scrollTop);
-	            return true;
-	        }
-	        this.like = function (links) {
-	            if (context.length == 0) return false;
-	            for (var i = 0; i < context.length; i++) {
-	                if (links.length == i) break;
-	                if (context[i].link != links[i]) return false;
-	            }
-	            return true;
-	        }
-	        this.count = function () {
-	            return context.length;
-	        }
-	        this.getBackLink = function () {
-	            var link = [],
-	                i;
-
-	            link.push("");
-	            for (i = 0; i < context.length - 1; i++) {
-	                link.push(context[i].link);
-	            }
-	            return link.join("#");
-	        }
-	    }
 	    function getAbsolutePath(path, basePath) {
 	        if (path == "") path = defaultLink;
 	        if (path.substr(0, 1) == "/") {
@@ -399,14 +498,10 @@ oldmanWebApp = {
 	        }
 	    }
 	    function loadContent(link, isAdd, lastLink, isRefresh) {
-	        function _event() {
-	            this.load = function () { };
-	            this.unload = function () { };
-	            this.active = function () { };
-	            this.inactive = function () { };
-	        }
-	        var currentId = ++loadId;
-	        oldmanWebApp.loadingTip.show();
+	        var currentId = ++loadId,
+                loading;
+
+	        loading = oldmanWebApp.loadingTip.show();
 	        $.ajax({
 	            mimeType: 'text/html; charset=utf-8',
 	            url: getAbsolutePath(link, lastLink),
@@ -416,7 +511,7 @@ oldmanWebApp = {
 	                if (currentId != loadId) {
 	                    return;
 	                }
-	                oldmanWebApp.loadingTip.hide();
+	                loading.hide();
 	                
 	                var json = jqXHR.getResponseHeader("X-Responded-JSON"),
 	                    responded,
@@ -424,12 +519,13 @@ oldmanWebApp = {
 
 	                if (json) {
 	                    responded = JSON.parse(json);
-	                    if (responded.status == 401 && fnOnUnauthorized(responded.headers.location)) {
-	                        return;
-	                    }
-	                    if (responded.headers && responded.headers.location) {
-	                        document.location = responded.headers.location;
-	                        return;
+	                    if (responded.status == 401) {
+	                        if (!fnOnUnauthorized(responded.headers.location)) {
+	                            if (responded.headers && responded.headers.location) {
+	                                document.location = responded.headers.location;
+	                                return;
+	                            }
+	                        }
 	                    }
 	                }
 	                
@@ -437,7 +533,7 @@ oldmanWebApp = {
 	                    view = element.children().last();
 	                    if (view.data("link") == link) {
 	                        view.empty();
-	                        oldmanWebApp._currentViewEvent = new _event();
+	                        oldmanWebApp._currentViewEvent = new oldmanWebApp.createEvent();
 	                        view.html(data);
 	                        links.setLastContext(view, oldmanWebApp._currentViewEvent);
 	                        oldmanWebApp._currentViewEvent.load();
@@ -451,8 +547,8 @@ oldmanWebApp = {
 	                        element.empty();
 	                    }
 
-	                    oldmanWebApp._currentViewEvent = new _event();
-	                    view = $("<div></div>").addClass("render-view").data("link", link).html(data);
+	                    oldmanWebApp._currentViewEvent = new oldmanWebApp.createEvent();
+	                    view = oldmanWebApp.createRenderView(link).html(data);
 	                    element.append(view);
 	                    links.setLastContext(view, oldmanWebApp._currentViewEvent);
 	                    oldmanWebApp._currentViewEvent.load();
@@ -465,9 +561,9 @@ oldmanWebApp = {
 	                if (currentId != loadId) {
 	                    return;
 	                }
-	                oldmanWebApp.loadingTip.hide();
-	                if (jqXHR.status == 401 && fnOnUnauthorized(link)) {
-	                    return;
+	                loading.hide();
+	                if (jqXHR.status == 401) {
+	                    fnOnUnauthorized(link);
 	                }
 	                var response = $(jqXHR.responseText),
                         title = $("<h4></h4>").text(errorThrown),
@@ -485,7 +581,7 @@ oldmanWebApp = {
 	                    if (view.data("link") == link) {
 	                        view.empty();
 	                        view.append(title).append(content);
-	                        links.setLastContext(view, new _event());
+	                        links.setLastContext(view, new oldmanWebApp.createEvent());
 	                        $(window).scrollTop(0);
 	                    }
 	                } else {
@@ -494,9 +590,9 @@ oldmanWebApp = {
 	                    } else {
 	                        element.empty();
 	                    }
-	                    view = $("<div></div>").addClass("render-view").data("link", link).append(title).append(content);
+	                    view = oldmanWebApp.createRenderView(link).append(title).append(content);
 	                    element.append(view);
-	                    links.setLastContext(view, new _event());
+	                    links.setLastContext(view, new oldmanWebApp.createEvent());
 	                    $(window).scrollTop(0);
 	                }
 	            },
@@ -620,6 +716,9 @@ oldmanWebApp = {
 	    },
 	    _same: function (href) {
 	        oldmanWebApp.link.sameHash(href);
+	    },
+	    _open: function (href) {
+	        oldmanWebApp._openView.load(href);
 	    }
 	},
 
@@ -647,6 +746,9 @@ oldmanWebApp = {
 	},
 
 	init: function (viewNode, defaultLink) {
+	    if (!!window.ActiveXObject || "ActiveXObject" in window) {
+	        $.ajaxSetup({ cache: false });
+	    }
 	    $("body").on("click", "a", function (e) {
 	        var target = $(this).attr("target"),
                 href = $(this).attr('href');
@@ -672,7 +774,9 @@ oldmanWebApp = {
 	    });
 	    $(window).bind("scroll", oldmanWebApp.dealVisibleLoading);
 	    $(window).bind("resize", oldmanWebApp.dealVisibleLoading);
+
 	    oldmanWebApp._mainView = new oldmanWebApp.viewArea(viewNode, defaultLink);
+	    oldmanWebApp._openView = new oldmanWebApp.openArea();
 	    oldmanWebApp.link._init(function (link) {
 	        oldmanWebApp._mainView.load(link);
 	    }, defaultLink);
@@ -680,14 +784,17 @@ oldmanWebApp = {
 	}
 }
 
+oldmanWebApp.messageBox = new oldmanWebApp.box("dialog-background", true);
+oldmanWebApp.windowBox = new oldmanWebApp.box("window-background");
+
 $app = {
     alert: oldmanWebApp.dialog.alert,
     confirm: oldmanWebApp.dialog.confirm,
     message: oldmanWebApp.dialog.message,
+    loading: oldmanWebApp.loadingTip.show,
     hash: oldmanWebApp.link.hash,
     addHash: oldmanWebApp.link.addHash,
     loadScript: oldmanWebApp.scriptLoader.load,
-    loading: oldmanWebApp.loadingTip,
     event: oldmanWebApp.event,
     close: oldmanWebApp.viewClose,
     init: oldmanWebApp.init
