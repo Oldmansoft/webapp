@@ -1,5 +1,5 @@
 ﻿/*
-* v0.1.10
+* v0.1.11
 * https://github.com/Oldmansoft/webapp
 * Copyright 2016 Oldmansoft, Inc; http://www.apache.org/licenses/LICENSE-2.0
 */
@@ -489,6 +489,7 @@ oldmanWebApp = {
 	            if (links.count() > 0) {
 	                links.last().event.inactive();
 	            } else {
+	                oldmanWebApp._mainView.inactiveCurrent();
 	                oldmanWebApp._activeView = oldmanWebApp._openView;
 	            }
 
@@ -501,7 +502,7 @@ oldmanWebApp = {
 	            });
 	            links.push(link);
 	            links.setLastContext(view, event);
-	            event.load();
+	            event.load("open", links.count());
 	            event.active();
 	        }).fail(function (jqXHR, textStatus, errorThrown) {
 	            loading.hide();
@@ -522,6 +523,7 @@ oldmanWebApp = {
 	            if (links.count() > 0) {
 	                links.last().event.inactive();
 	            } else {
+	                oldmanWebApp._mainView.inactiveCurrent();
 	                oldmanWebApp._activeView = oldmanWebApp._openView;
 	            }
 	            oldmanWebApp._currentViewEvent = new oldmanWebApp.createEvent();
@@ -540,6 +542,7 @@ oldmanWebApp = {
 	                current.event.active();
 	            } else {
 	                oldmanWebApp._activeView = oldmanWebApp._mainView;
+	                oldmanWebApp._mainView.activeCurrent();
 	            }
 	        });
 	    }
@@ -628,7 +631,7 @@ oldmanWebApp = {
 	                    view = oldmanWebApp.createView("main", link).html(data);
 	                    element.append(view);
 	                    links.setLastContext(view, oldmanWebApp._currentViewEvent);
-	                    oldmanWebApp._currentViewEvent.load();
+	                    oldmanWebApp._currentViewEvent.load("main", links.count());
 	                    oldmanWebApp._currentViewEvent.active();
 	                    $(window).scrollTop(0);
 	                }
@@ -738,6 +741,12 @@ oldmanWebApp = {
 	    this.setDefaultLink = function (link) {
 	        defaultLink = link;
 	    }
+	    this.activeCurrent = function () {
+	        links.last().event.active();
+	    }
+	    this.inactiveCurrent = function () {
+	        links.last().event.inactive();
+	    }
 	},
 
 	event: function () {
@@ -794,6 +803,10 @@ oldmanWebApp = {
 	    _open: function (href) {
 	        oldmanWebApp._openView.load(href);
 	    }
+	},
+
+	open: function (href) {
+	    oldmanWebApp._openView.load(href)
 	},
 
 	initOption: function (main) {
@@ -868,6 +881,7 @@ $app = {
     loading: oldmanWebApp.loadingTip.show,
     hash: oldmanWebApp.link.hash,
     addHash: oldmanWebApp.link.addHash,
+    open: oldmanWebApp.open,
     loadScript: oldmanWebApp.scriptLoader.load,
     event: oldmanWebApp.event,
     close: oldmanWebApp.viewClose,
