@@ -1,5 +1,6 @@
 ﻿/*
-* v0.1.9 https://github.com/Oldmansoft/webapp
+* v0.1.10
+* https://github.com/Oldmansoft/webapp
 * Copyright 2016 Oldmansoft, Inc; http://www.apache.org/licenses/LICENSE-2.0
 */
 var oldmanWebApp,
@@ -16,9 +17,12 @@ oldmanWebApp = {
     },
     _mainView: null,
     _openView: null,
+    _activeView: null,
+    _fnOnUnauthorized: function () { return false; },
     _currentViewEvent: null,
     _isDealEmptyTarget: true,
     messageBox: null,
+    windowBox: null,
 
     scriptLoader: new function () {
         var hasScripts = [];
@@ -48,8 +52,28 @@ oldmanWebApp = {
         }
     },
 
-    createRenderView: function(link){
-        return $("<div></div>").addClass("render-view").data("link", link);
+    bodyManagement: new function () {
+        var count = 0;
+        this.expand = function () {
+            if (count == 0) {
+                $("body").addClass("layout-expanded");
+            }
+            count++;
+        }
+
+        this.shrink = function () {
+            count--;
+            if (count == 0) {
+                $("body").removeClass("layout-expanded");
+            }
+            if (count < 0) {
+                throw "shrink error";
+            }
+        }
+    },
+
+    createView: function(name, link){
+        return $("<div></div>").addClass(name + "-view").data("link", link);
     },
 
     createEvent: function () {
@@ -195,26 +219,28 @@ oldmanWebApp = {
         var isInit = false,
 	        element,
             core,
-	        stackHideNode = [],
-	        currentNode = null;
+	        store = [],
+	        current = null;
 
         function hide (event, fn) {
             if (event && event.target != event.currentTarget) return;
 
             element.stop(true);
             element.fadeOut(200, function () {
-                if (stackHideNode.length > 0) {
-                    currentNode = stackHideNode.pop();
-                    core.empty();
-                    core.append(currentNode);
+                oldmanWebApp.bodyManagement.shrink();
+                if (current.close) current.close();
+                current.node.remove();
+
+                if (store.length > 0) {
+                    current = store.pop();
+                    core.append(current.node);
                     if (fn) fn();
                     element.stop(true, true);
                     element.fadeIn(200);
                     return;
                 }
 
-                core.empty();
-                currentNode = null;
+                current = null;
                 if (fn) fn();
             });
         }
@@ -231,21 +257,38 @@ oldmanWebApp = {
             }
             element.prependTo($("body"));
         }
-        this.show = function (node) {
+
+        this.show = function (node, fnClose) {
             initElement();
-            if (currentNode) {
-                if (currentNode.data("type") == "message") {
+            if (current) {
+                if (current.node.data("type") == "message") {
                     throw "not allow show again after message show.";
                 }
-                stackHideNode.push(currentNode.detach());
+                store.push({ node: current.node.detach(), close: current.close });
             }
-            currentNode = node;
+            oldmanWebApp.bodyManagement.expand();
+            current = { node: node, close: fnClose };
             core.append(node);
             element.stop(true, true);
             element.fadeIn(200);
         }
+
         this.hide = function (event, fn) {
             hide(event, fn);
+        }
+
+        this.clear = function () {
+            if (!current) return;
+            if (current.close) current.close();
+            current.node.remove();
+            while (store.length > 0) {
+                current = store.pop();
+                core.append(current.node);
+                if (current.close) current.close();
+                current.node.remove();
+            }
+            current = null;
+            element.hide();
         }
     },
 
@@ -323,6 +366,7 @@ oldmanWebApp = {
 	    }
 	    this.show = function () {
 	        initElement();
+	        oldmanWebApp.bodyManagement.expand();
 	        element.stop(true, true);
 	        element.fadeIn(2000);
 	        return new function () {
@@ -334,7 +378,9 @@ oldmanWebApp = {
 	    this.hide = function () {
 	        initElement();
 	        element.stop(true);
-	        element.fadeOut(200);
+	        element.fadeOut(200, function () {
+	            oldmanWebApp.bodyManagement.shrink();
+	        });
 	    }
 	},
 
@@ -426,12 +472,13 @@ oldmanWebApp = {
 	            loading.hide();
 	            var json = jqXHR.getResponseHeader("X-Responded-JSON"),
 	                    responded,
-	                    view;
+	                    view,
+	                    event;
 
 	            if (json) {
 	                responded = JSON.parse(json);
 	                if (responded.status == 401) {
-	                    if (!fnOnUnauthorized(responded.headers.location)) {
+	                    if (!oldmanWebApp._fnOnUnauthorized(responded.headers.location)) {
 	                        if (responded.headers && responded.headers.location) {
 	                            document.location = responded.headers.location;
 	                            return;
@@ -441,36 +488,67 @@ oldmanWebApp = {
 	            }
 	            if (links.count() > 0) {
 	                links.last().event.inactive();
+	            } else {
+	                oldmanWebApp._activeView = oldmanWebApp._openView;
 	            }
 
 	            oldmanWebApp._currentViewEvent = new oldmanWebApp.createEvent();
-	            view = oldmanWebApp.createRenderView(link).html(data);
+	            view = oldmanWebApp.createView("open", link).html(data);
+	            event = oldmanWebApp._currentViewEvent;
+	            oldmanWebApp.windowBox.show(view, function () {
+	                event.inactive();
+	                event.unload();
+	            });
+	            links.push(link);
+	            links.setLastContext(view, event);
+	            event.load();
+	            event.active();
+	        }).fail(function (jqXHR, textStatus, errorThrown) {
+	            loading.hide();
+	            if (jqXHR.status == 401) {
+	                oldmanWebApp._fnOnUnauthorized(link);
+	            }
+	            var response = $(jqXHR.responseText),
+                    title = $("<h4></h4>").text(errorThrown),
+                    content = $("<pre></pre>"),
+                    view;
+
+	            if (response[11] != null && response[11].nodeType == 8) {
+	                content.text(response[11].data);
+	            } else {
+	                content.text(response.eq(1).text());
+	            }
+
+	            if (links.count() > 0) {
+	                links.last().event.inactive();
+	            } else {
+	                oldmanWebApp._activeView = oldmanWebApp._openView;
+	            }
+	            oldmanWebApp._currentViewEvent = new oldmanWebApp.createEvent();
+	            view = oldmanWebApp.createView("open", link).append(title).append(content);
 	            oldmanWebApp.windowBox.show(view);
 	            links.push(link);
 	            links.setLastContext(view, oldmanWebApp._currentViewEvent);
-	            oldmanWebApp._currentViewEvent.load();
-	            oldmanWebApp._currentViewEvent.active();
-	        }).fail(function () {
-	            loading.hide();
 	        });
 	    }
 
 	    this.close = function () {
-	        var current = links.pop();
-	        if (current) {
-	            current.event.inactive();
-	            current.event.unload();
-	        }
+	        links.pop();
 	        oldmanWebApp.windowBox.hide(null, function () {
+	            var current = links.last();
 	            if (current) {
-	                current.node.remove();
-	            }
-	            current = links.last();
-	            if (current) {
-	                oldmanWebApp.windowBox.show(current.node);
 	                current.event.active();
+	            } else {
+	                oldmanWebApp._activeView = oldmanWebApp._mainView;
 	            }
 	        });
+	    }
+
+	    this.clear = function () {
+	        oldmanWebApp.windowBox.clear();
+	        if (links.count() > 0) {
+	            links = new oldmanWebApp.linkManagement();
+	        }
 	    }
 	},
 
@@ -478,7 +556,6 @@ oldmanWebApp = {
 	    var loadId = 0,
             element = $(viewNode),
             defaultLink = link,
-            fnOnUnauthorized = function () { return false; },
             links = new oldmanWebApp.linkManagement();
 
 	    function getAbsolutePath(path, basePath) {
@@ -520,7 +597,7 @@ oldmanWebApp = {
 	                if (json) {
 	                    responded = JSON.parse(json);
 	                    if (responded.status == 401) {
-	                        if (!fnOnUnauthorized(responded.headers.location)) {
+	                        if (!oldmanWebApp._fnOnUnauthorized(responded.headers.location)) {
 	                            if (responded.headers && responded.headers.location) {
 	                                document.location = responded.headers.location;
 	                                return;
@@ -548,7 +625,7 @@ oldmanWebApp = {
 	                    }
 
 	                    oldmanWebApp._currentViewEvent = new oldmanWebApp.createEvent();
-	                    view = oldmanWebApp.createRenderView(link).html(data);
+	                    view = oldmanWebApp.createView("main", link).html(data);
 	                    element.append(view);
 	                    links.setLastContext(view, oldmanWebApp._currentViewEvent);
 	                    oldmanWebApp._currentViewEvent.load();
@@ -563,7 +640,7 @@ oldmanWebApp = {
 	                }
 	                loading.hide();
 	                if (jqXHR.status == 401) {
-	                    fnOnUnauthorized(link);
+	                    oldmanWebApp._fnOnUnauthorized(link);
 	                }
 	                var response = $(jqXHR.responseText),
                         title = $("<h4></h4>").text(errorThrown),
@@ -590,7 +667,7 @@ oldmanWebApp = {
 	                    } else {
 	                        element.empty();
 	                    }
-	                    view = oldmanWebApp.createRenderView(link).append(title).append(content);
+	                    view = oldmanWebApp.createView("main", link).append(title).append(content);
 	                    element.append(view);
 	                    links.setLastContext(view, new oldmanWebApp.createEvent());
 	                    $(window).scrollTop(0);
@@ -604,6 +681,9 @@ oldmanWebApp = {
 	        var hrefs = link.split("#"),
 	            i,
 	            context;
+
+	        oldmanWebApp._openView.clear();
+	        oldmanWebApp.messageBox.clear();
 
 	        if (hrefs.length == 1 && (links.count() == 0 || links.first().link != hrefs[0])) {
 	            links.clear();
@@ -658,12 +738,6 @@ oldmanWebApp = {
 	    this.setDefaultLink = function (link) {
 	        defaultLink = link;
 	    }
-	    this.getOnUnauthorized = function () {
-	        return fnOnUnauthorized;
-	    }
-	    this.setOnUnauthorized = function (fn) {
-	        fnOnUnauthorized = fn;
-	    }
 	},
 
 	event: function () {
@@ -688,7 +762,7 @@ oldmanWebApp = {
 	},
 
 	viewClose: function () {
-	    oldmanWebApp._mainView.close();
+	    oldmanWebApp._activeView.close();
 	},
 
 	dealVisibleLoading: function () {
@@ -734,8 +808,7 @@ oldmanWebApp = {
 	        return this;
 	    }
 	    this.unauthorized = function (fn) {
-	        if (!fn) return main.getOnUnauthorized();
-	        main.setOnUnauthorized(fn);
+	        oldmanWebApp._fnOnUnauthorized = fn;
 	        return this;
 	    }
 	    this.dealEmptyTarget = function (b) {
@@ -777,6 +850,7 @@ oldmanWebApp = {
 
 	    oldmanWebApp._mainView = new oldmanWebApp.viewArea(viewNode, defaultLink);
 	    oldmanWebApp._openView = new oldmanWebApp.openArea();
+	    oldmanWebApp._activeView = oldmanWebApp._mainView;
 	    oldmanWebApp.link._init(function (link) {
 	        oldmanWebApp._mainView.load(link);
 	    }, defaultLink);
