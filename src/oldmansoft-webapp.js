@@ -323,6 +323,9 @@ oldmanWebApp = {
 		        element.data("type", type);
 		        return element;
 		    }
+		    this.getElement = function () {
+		        return element;
+		    }
 		}
 		this.alert = function (content, title, fn) {
 		    var builder = new elementBuilder();
@@ -344,8 +347,11 @@ oldmanWebApp = {
 		    builder.setBody(content);
 		    oldmanWebApp.messageBox.show(builder.get("message"));
 		    return new function () {
-		        this.hide = function () {
-		            oldmanWebApp.messageBox.hide();
+		        this.hide = function (fn) {
+		            oldmanWebApp.messageBox.hide(null, fn);
+		        }
+		        this.change = function (text) {
+		            builder.getElement().find(".dialog-body").text(text);
 		        }
 		    }
 		}
@@ -880,7 +886,9 @@ $app = {
     message: oldmanWebApp.dialog.message,
     loading: oldmanWebApp.loadingTip.show,
     hash: oldmanWebApp.link.hash,
+    baseHash: oldmanWebApp.link.hash,
     addHash: oldmanWebApp.link.addHash,
+    sameHash: oldmanWebApp.link.sameHash,
     open: oldmanWebApp.open,
     loadScript: oldmanWebApp.scriptLoader.load,
     event: oldmanWebApp.event,
