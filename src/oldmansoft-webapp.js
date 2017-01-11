@@ -1,5 +1,5 @@
 ﻿/*
-* v0.1.11
+* v0.1.12
 * https://github.com/Oldmansoft/webapp
 * Copyright 2016 Oldmansoft, Inc; http://www.apache.org/licenses/LICENSE-2.0
 */
@@ -86,111 +86,61 @@ oldmanWebApp = {
     linkManagement: function () {
         var context = [];
 
-        function createItem(link) {
-            return {
-                link: link,
-                node: null,
-                scrollTop: 0,
-                scrollLeft: 0,
-                event: null
-            };
+        function item(link) {
+            this.link = link;
+            this.node = null;
+            this.scrollTop = 0;
+            this.scrollLeft = 0;
+            this.event = null;
+            this.visible = true;
+            this.view = null;
+            this.level = 0;
+
+            this.hide = function () {
+                if (!this.node || !this.visible) return;
+                var win = $(window);
+                this.scrollTop = win.scrollTop();
+                this.scrollLeft = win.scrollLeft();
+                this.event.inactive(this.view, this.level);
+                this.node.hide();
+                this.visible = false;
+            }
+
+            this.remove = function () {
+                if (!this.node) return;
+                this.event.inactive(this.view, this.level);
+                this.event.unload(this.view, this.level);
+                this.node.remove();
+                this.node = null;
+                this.event = null;
+            }
+
+            this.show = function () {
+                if (!this.node || this.visible) return;
+                this.event.active(this.view, this.level);
+                this.node.show();
+                $(window).scrollLeft(this.scrollLeft);
+                $(window).scrollTop(this.scrollTop);
+                this.visible = true;
+            }
         }
 
-        this.clear = function () {
-            var i,
-                event;
-
-            for (i = context.length - 1; i > -1; i--) {
-                event = context[i].event;
-                if (event) {
-                    event.inactive();
-                    event.unload();
-                }
-            }
-            context = [];
-        }
-        this.dealNotStartWith = function (hrefs) {
-            var retain = [],
-                result,
-                lastItem,
-                i;
-
-            if (context.length == 0) {
-                for (i = 0; i < hrefs.length; i++) {
-                    context.push(createItem(hrefs[i]));
-                }
-                return false;
-            }
-
-            for (i = 0; i < context.length - 1; i++) {
-                if (hrefs.length - 1 > i) {
-                    if (context[i].link == hrefs[i]) {
-                        retain.push(context[i]);
-                    } else {
-                        retain.push(createItem(hrefs[i]));
-                    }
-                } else if (context[i].node) {
-                    context[i].event.inactive();
-                    context[i].event.unload();
-                    context[i].node.remove();
-                }
-            }
-            for (i = context.length - 1; i < hrefs.length - 1; i++) {
-                retain.push(createItem(hrefs[i]));
-            }
-
-            lastItem = this.last();
-            if (lastItem.link == hrefs[hrefs.length - 1]) {
-                retain.push(lastItem);
-                result = true;
-            } else {
-                retain.push(createItem(hrefs[hrefs.length - 1]));
-                lastItem.event.inactive();
-                lastItem.event.unload();
-                lastItem.node.remove();
-                result = false;
-            }
-            context = retain;
-            return result;
-        }
         this.push = function (link) {
-            context.push(createItem(link));
+            context.push(new item(link));
         }
         this.pop = function () {
             return context.pop();
         }
-        this.first = function () {
-            return context[0];
-        }
         this.last = function () {
             return context[context.length - 1];
         }
-        this.lastLast = function () {
-            return context[context.length - 2];
-        }
-        this.setLastContext = function (node, event) {
-            this.last().node = node;
-            this.last().event = event;
-        }
-        this.setLastLastHide = function () {
-            var target = this.lastLast(),
-                win;
-
-            if (!target.node) return;
-
-            win = $(window);
-            target.scrollTop = win.scrollTop();
-            target.scrollLeft = win.scrollLeft();
-            target.node.hide();
-        }
-        this.setLastShow = function () {
-            var target = this.last();
-            if (!target.node) return false;
-            target.event.active();
-            target.node.show();
-            $(window).scrollLeft(target.scrollLeft);
-            $(window).scrollTop(target.scrollTop);
-            return true;
+        this.setLastContext = function (node, event, view, level) {
+            var last = this.last();
+            last.node = node;
+            last.event = event;
+            last.view = view;
+            last.level = level;
+            return last;
         }
         this.like = function (links) {
             if (context.length == 0) return false;
@@ -202,6 +152,15 @@ oldmanWebApp = {
         }
         this.count = function () {
             return context.length;
+        }
+        this.get = function (index) {
+            return context[index];
+        }
+        this.hasNode = function (index) {
+            return context[index].node != null;
+        }
+        this.replace = function (index, link) {
+            context[index] = new item(link);
         }
         this.getBackLink = function () {
             var link = [],
@@ -441,6 +400,9 @@ oldmanWebApp = {
 		    source.pop();
 		    source.push(href);
 		    window.location.hash = source.join("#");
+		    if (href == lastHash) {
+		        this.refresh();
+		    }
 		}
 		this.refresh = function () {
 		    callLeave();
@@ -479,7 +441,8 @@ oldmanWebApp = {
 	            var json = jqXHR.getResponseHeader("X-Responded-JSON"),
 	                    responded,
 	                    view,
-	                    event;
+	                    event,
+	                    lastNode;
 
 	            if (json) {
 	                responded = JSON.parse(json);
@@ -493,7 +456,7 @@ oldmanWebApp = {
 	                }
 	            }
 	            if (links.count() > 0) {
-	                links.last().event.inactive();
+	                links.last().hide();
 	            } else {
 	                oldmanWebApp._mainView.inactiveCurrent();
 	                oldmanWebApp._activeView = oldmanWebApp._openView;
@@ -502,14 +465,13 @@ oldmanWebApp = {
 	            oldmanWebApp._currentViewEvent = new oldmanWebApp.createEvent();
 	            view = oldmanWebApp.createView("open", link).html(data);
 	            event = oldmanWebApp._currentViewEvent;
-	            oldmanWebApp.windowBox.show(view, function () {
-	                event.inactive();
-	                event.unload();
-	            });
 	            links.push(link);
-	            links.setLastContext(view, event);
+	            lastNode = links.setLastContext(view, event, "open", links.count());
+	            oldmanWebApp.windowBox.show(view, function () {
+	                lastNode.remove();
+	            });
 	            event.load("open", links.count());
-	            event.active();
+	            event.active("open", links.count());
 	        }).fail(function (jqXHR, textStatus, errorThrown) {
 	            loading.hide();
 	            if (jqXHR.status == 401) {
@@ -518,7 +480,9 @@ oldmanWebApp = {
 	            var response = $(jqXHR.responseText),
                     title = $("<h4></h4>").text(errorThrown),
                     content = $("<pre></pre>"),
-                    view;
+                    view,
+                    event,
+                    lastNode;
 
 	            if (response[11] != null && response[11].nodeType == 8) {
 	                content.text(response[11].data);
@@ -527,16 +491,19 @@ oldmanWebApp = {
 	            }
 
 	            if (links.count() > 0) {
-	                links.last().event.inactive();
+	                links.last().hide();
 	            } else {
 	                oldmanWebApp._mainView.inactiveCurrent();
 	                oldmanWebApp._activeView = oldmanWebApp._openView;
 	            }
 	            oldmanWebApp._currentViewEvent = new oldmanWebApp.createEvent();
 	            view = oldmanWebApp.createView("open", link).append(title).append(content);
-	            oldmanWebApp.windowBox.show(view);
+	            event = oldmanWebApp._currentViewEvent;
 	            links.push(link);
-	            links.setLastContext(view, oldmanWebApp._currentViewEvent);
+	            lastNode = links.setLastContext(view, event, "open", links.count());
+	            oldmanWebApp.windowBox.show(view, function () {
+	                lastNode.remove();
+	            });
 	        });
 	    }
 
@@ -545,7 +512,7 @@ oldmanWebApp = {
 	        oldmanWebApp.windowBox.hide(null, function () {
 	            var current = links.last();
 	            if (current) {
-	                current.event.active();
+	                current.show();
 	            } else {
 	                oldmanWebApp._activeView = oldmanWebApp._mainView;
 	                oldmanWebApp._mainView.activeCurrent();
@@ -567,6 +534,14 @@ oldmanWebApp = {
             defaultLink = link,
             links = new oldmanWebApp.linkManagement();
 
+	    function setViewHtml(view, first, second) {
+	        if (second == undefined) {
+	            view.html(first);
+	        } else {
+	            view.append(first).append(second);
+	        }
+	    }
+
 	    function getAbsolutePath(path, basePath) {
 	        if (path == "") path = defaultLink;
 	        if (path.substr(0, 1) == "/") {
@@ -582,8 +557,9 @@ oldmanWebApp = {
 	            if (array[i] == "" && defaultLink.substr(0, 1) == "/") return defaultLink;
 	            if (array[i].substr(0, 1) == "/") return array[i];
 	        }
+	        return null;
 	    }
-	    function loadContent(link, isAdd, lastLink, isRefresh) {
+	    function loadContent(link, lastLink, onloadBefore) {
 	        var currentId = ++loadId,
                 loading;
 
@@ -615,39 +591,23 @@ oldmanWebApp = {
 	                    }
 	                }
 	                
-	                if (isRefresh) {
-	                    view = element.children().last();
-	                    if (view.data("link") == link) {
-	                        view.empty();
-	                        oldmanWebApp._currentViewEvent = new oldmanWebApp.createEvent();
-	                        view.html(data);
-	                        links.setLastContext(view, oldmanWebApp._currentViewEvent);
-	                        oldmanWebApp._currentViewEvent.load();
-	                        oldmanWebApp._currentViewEvent.active();
-	                        $(window).scrollTop(0);
-	                    }
-	                } else {
-	                    if (isAdd) {
-	                        links.setLastLastHide();
-	                    } else {
-	                        element.empty();
-	                    }
-
-	                    oldmanWebApp._currentViewEvent = new oldmanWebApp.createEvent();
-	                    view = oldmanWebApp.createView("main", link).html(data);
-	                    element.append(view);
-	                    links.setLastContext(view, oldmanWebApp._currentViewEvent);
-	                    oldmanWebApp._currentViewEvent.load("main", links.count());
-	                    oldmanWebApp._currentViewEvent.active();
-	                    $(window).scrollTop(0);
-	                }
-	                oldmanWebApp.dealVisibleLoading();
+	                if (onloadBefore) onloadBefore();
+	                view = oldmanWebApp.createView("main", link);
+	                element.append(view);
+	                oldmanWebApp._currentViewEvent = new oldmanWebApp.createEvent();
+	                setViewHtml(view, data);
+	                links.setLastContext(view, oldmanWebApp._currentViewEvent, "main", links.count());
+	                oldmanWebApp._currentViewEvent.load("main", links.count());
+	                oldmanWebApp._currentViewEvent.active("main", links.count());
+	                $(window).scrollTop(0);
+	                oldmanWebApp.dealScrollToVisibleLoading();
 	            },
 	            error: function (jqXHR, textStatus, errorThrown) {
 	                if (currentId != loadId) {
 	                    return;
 	                }
 	                loading.hide();
+
 	                if (jqXHR.status == 401) {
 	                    oldmanWebApp._fnOnUnauthorized(link);
 	                }
@@ -662,25 +622,12 @@ oldmanWebApp = {
 	                    content.text(response.eq(1).text());
 	                }
 
-	                if (isRefresh) {
-	                    view = element.children().last();
-	                    if (view.data("link") == link) {
-	                        view.empty();
-	                        view.append(title).append(content);
-	                        links.setLastContext(view, new oldmanWebApp.createEvent());
-	                        $(window).scrollTop(0);
-	                    }
-	                } else {
-	                    if (isAdd) {
-	                        links.setLastLastHide();
-	                    } else {
-	                        element.empty();
-	                    }
-	                    view = oldmanWebApp.createView("main", link).append(title).append(content);
-	                    element.append(view);
-	                    links.setLastContext(view, new oldmanWebApp.createEvent());
-	                    $(window).scrollTop(0);
-	                }
+	                if (onloadBefore) onloadBefore();
+	                view = oldmanWebApp.createView("main", link);
+	                element.append(view);
+	                setViewHtml(view, title, content);
+	                links.setLastContext(view, new oldmanWebApp.createEvent(), "main", links.count());
+	                $(window).scrollTop(0);
 	            },
 	            dataType: "html",
 	            async: true
@@ -694,46 +641,42 @@ oldmanWebApp = {
 	        oldmanWebApp._openView.clear();
 	        oldmanWebApp.messageBox.clear();
 
-	        if (hrefs.length == 1 && (links.count() == 0 || links.first().link != hrefs[0])) {
-	            links.clear();
-	            links.push(link);
-	            loadContent(link);
-	        } else {
-	            if (links.like(hrefs)) {
-	                if (links.count() > hrefs.length) {
-	                    for (i = links.count() - 1; i > hrefs.length - 1; i--) {
-	                        context = links.pop();
-	                        if (context.node) {
-	                            context.event.inactive();
-	                            context.event.unload();
-	                            context.node.remove();
-	                        }
-	                    }
-	                    if (!links.setLastShow()) {
-	                        loadContent(hrefs[hrefs.length - 1], hrefs.length > 1, getPathHasAbsolutePathFromArray(hrefs, hrefs.length - 2));
-	                    }
-	                } else if (links.count() < hrefs.length) {
-	                    for (i = links.count() ; i < hrefs.length; i++) {
-	                        links.push(hrefs[i]);
-	                    }
-	                    loadContent(hrefs[hrefs.length - 1], true, getPathHasAbsolutePathFromArray(hrefs, hrefs.length - 2));
-	                } else {
-	                    links.last().event.inactive();
-	                    links.last().event.unload();
-	                    loadContent(hrefs[hrefs.length - 1], null, getPathHasAbsolutePathFromArray(hrefs, hrefs.length - 2), true);
-	                }
-	            } else {
-	                if (!links.dealNotStartWith(hrefs)) {
-	                    loadContent(hrefs[hrefs.length - 1], true, getPathHasAbsolutePathFromArray(hrefs, hrefs.length - 2));
+	        if (links.count() > hrefs.length && (links.like(hrefs) || (links.hasNode(hrefs.length - 1)))) {
+	            for (i = links.count() - 1; i > hrefs.length - 1; i--) {
+	                context = links.pop();
+	                if (context.node) {
+	                    context.remove();
 	                }
 	            }
+	            links.get(hrefs.length - 1).show();
+	            return;
 	        }
+
+	        loadContent(hrefs[hrefs.length - 1], getPathHasAbsolutePathFromArray(hrefs, hrefs.length - 2), function () {
+	            var linksCount = links.count(),
+	                hrefsLength = hrefs.length;
+
+	            for (i = linksCount - 1; i > hrefsLength - 1; i--) {
+	                links.pop().remove();
+	            }
+	            for (i = 0; i < hrefsLength; i++) {
+	                if (linksCount > i) {
+	                    if (links.get(i).link != hrefs[i] || (linksCount == i + 1 && hrefsLength == linksCount)) {
+	                        links.get(i).remove();
+	                        links.replace(i, hrefs[i]);
+	                    } else {
+	                        links.get(i).hide();
+	                    }
+	                } else {
+	                    links.push(hrefs[i]);
+	                }
+	            }
+	        });
 	    }
 	    this.close = function () {
-	        if (links.count() == 1) {
-	            throw "it's not follow view, close failure.";
+	        if (links.count() > 1) {
+	            oldmanWebApp.link.hash(links.getBackLink());
 	        }
-	        oldmanWebApp.link.hash(links.getBackLink());
 	    }
 	    this.getElement = function () {
 	        return element;
@@ -748,10 +691,10 @@ oldmanWebApp = {
 	        defaultLink = link;
 	    }
 	    this.activeCurrent = function () {
-	        links.last().event.active();
+	        links.last().show();
 	    }
 	    this.inactiveCurrent = function () {
-	        links.last().event.inactive();
+	        links.last().hide();
 	    }
 	},
 
@@ -780,7 +723,7 @@ oldmanWebApp = {
 	    oldmanWebApp._activeView.close();
 	},
 
-	dealVisibleLoading: function () {
+	dealScrollToVisibleLoading: function () {
 	    var loading = $(".webapp-loading:visible"),
 	        src;
 
@@ -791,7 +734,7 @@ oldmanWebApp = {
 	        $.get(src, function (data) {
 	            loading.before(data);
 	            loading.remove();
-	            oldmanWebApp.dealVisibleLoading();
+	            oldmanWebApp.dealScrollToVisibleLoading();
 	        });
 	    }
 	},
@@ -864,8 +807,8 @@ oldmanWebApp = {
 	            oldmanWebApp.dealHrefTarget[target](href);
 	        }
 	    });
-	    $(window).bind("scroll", oldmanWebApp.dealVisibleLoading);
-	    $(window).bind("resize", oldmanWebApp.dealVisibleLoading);
+	    $(window).bind("scroll", oldmanWebApp.dealScrollToVisibleLoading);
+	    $(window).bind("resize", oldmanWebApp.dealScrollToVisibleLoading);
 
 	    oldmanWebApp._mainView = new oldmanWebApp.viewArea(viewNode, defaultLink);
 	    oldmanWebApp._openView = new oldmanWebApp.openArea();
