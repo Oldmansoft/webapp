@@ -1,5 +1,5 @@
 ﻿/*
-* v0.1.13
+* v0.1.14
 * https://github.com/Oldmansoft/webapp
 * Copyright 2016 Oldmansoft, Inc; http://www.apache.org/licenses/LICENSE-2.0
 */
@@ -11,9 +11,9 @@ oldmanWebApp = {
         timeover: 180000
     },
     text: {
-        confirm: "确认",
-        cancel: "取消",
-        loading: "加载中"
+        confirm: "Cofirm",
+        cancel: "Cancel",
+        loading: "Loading"
     },
     _mainView: null,
     _openView: null,
@@ -604,53 +604,49 @@ oldmanWebApp = {
 	            mimeType: 'text/html; charset=utf-8',
 	            url: oldmanWebApp.getAbsolutePath(link, basePath, defaultLink),
 	            type: 'GET',
-	            timeout: oldmanWebApp.setting.timeover,
-	            success: function (data, textStatus, jqXHR) {
-	                if (currentId != loadId) {
-	                    return;
-	                }
-	                loading.hide();
-	                
-	                var json = jqXHR.getResponseHeader("X-Responded-JSON"),
-	                    responded;
+	            timeout: oldmanWebApp.setting.timeover
+	        }).done(function (data, textStatus, jqXHR) {
+	            if (currentId != loadId) {
+	                return;
+	            }
+	            loading.hide();
 
-	                if (json) {
-	                    responded = JSON.parse(json);
-	                    if (responded.status == 401) {
-	                        if (!oldmanWebApp._fnOnUnauthorized(responded.headers.location)) {
-	                            if (responded.headers && responded.headers.location) {
-	                                document.location = responded.headers.location;
-	                                return;
-	                            }
+	            var json = jqXHR.getResponseHeader("X-Responded-JSON"),
+                    responded;
+
+	            if (json) {
+	                responded = JSON.parse(json);
+	                if (responded.status == 401) {
+	                    if (!oldmanWebApp._fnOnUnauthorized(responded.headers.location)) {
+	                        if (responded.headers && responded.headers.location) {
+	                            document.location = responded.headers.location;
+	                            return;
 	                        }
 	                    }
 	                }
-	                
-	                setView(link, onloadBefore, data);
-	            },
-	            error: function (jqXHR, textStatus, errorThrown) {
-	                if (currentId != loadId) {
-	                    return;
-	                }
-	                loading.hide();
+	            }
 
-	                if (jqXHR.status == 401) {
-	                    oldmanWebApp._fnOnUnauthorized(link);
-	                }
-	                var response = $(jqXHR.responseText),
-                        title = $("<h4></h4>").text(errorThrown),
-                        content = $("<pre></pre>");
+	            setView(link, onloadBefore, data);
+	        }).fail(function (jqXHR, textStatus, errorThrown) {
+	            if (currentId != loadId) {
+	                return;
+	            }
+	            loading.hide();
 
-	                if (response[11] != null && response[11].nodeType == 8) {
-	                    content.text(response[11].data);
-	                } else {
-	                    content.text(response.eq(1).text());
-	                }
+	            if (jqXHR.status == 401) {
+	                oldmanWebApp._fnOnUnauthorized(link);
+	            }
+	            var response = $(jqXHR.responseText),
+                    title = $("<h4></h4>").text(errorThrown),
+                    content = $("<pre></pre>");
 
-	                setView(link, onloadBefore, title, content);
-	            },
-	            dataType: "html",
-	            async: true
+	            if (response[11] != null && response[11].nodeType == 8) {
+	                content.text(response[11].data);
+	            } else {
+	                content.text(response.eq(1).text());
+	            }
+
+	            setView(link, onloadBefore, title, content);
 	        });
 	    }
 
@@ -662,7 +658,7 @@ oldmanWebApp = {
 	        oldmanWebApp._openView.clear();
 	        oldmanWebApp.messageBox.clear();
 
-	        if (links.count() > hrefs.length && (links.like(hrefs) || (links.hasNode(hrefs.length - 1)))) {
+	        if (links.count() > hrefs.length && links.like(hrefs) && (links.hasNode(hrefs.length - 1))) {
 	            for (i = links.count() - 1; i > hrefs.length - 1; i--) {
 	                context = links.pop();
 	                if (context.node) {
@@ -781,12 +777,20 @@ oldmanWebApp = {
 	        oldmanWebApp.link.sameHash(href);
 	    },
 	    _open: function (href) {
-	        oldmanWebApp._openView.load(href);
+	        oldmanWebApp.open(href);
 	    }
 	},
 
 	open: function (href) {
 	    oldmanWebApp._openView.load(href)
+	},
+
+	configSetting: function (fn) {
+	    if (typeof fn == "function") fn(oldmanWebApp.setting);
+	},
+
+	configText: function (fn) {
+	    if (typeof fn == "function") fn(oldmanWebApp.text);
 	},
 
 	initOption: function (main) {
@@ -830,10 +834,14 @@ oldmanWebApp = {
 	            return;
 	        }
 
-	        if (!target && oldmanWebApp._isDealEmptyTarget) {
+	        if (!target) {
+	            if (!oldmanWebApp._isDealEmptyTarget) return;
 	            e.preventDefault();
-	            oldmanWebApp.link.hash(href);
-	        } else if (oldmanWebApp.dealHrefTarget[target]) {
+	            oldmanWebApp.dealHrefTarget._base(href);
+	            return;
+	        }
+
+	        if (oldmanWebApp.dealHrefTarget[target]) {
 	            e.preventDefault();
 	            oldmanWebApp.dealHrefTarget[target](href);
 	        }
@@ -855,16 +863,18 @@ oldmanWebApp.messageBox = new oldmanWebApp.box("dialog-background", true);
 oldmanWebApp.windowBox = new oldmanWebApp.box("window-background");
 
 $app = {
+    configSetting: oldmanWebApp.configSetting,
+    configText: oldmanWebApp.configText,
     alert: oldmanWebApp.dialog.alert,
     confirm: oldmanWebApp.dialog.confirm,
     message: oldmanWebApp.dialog.message,
     loading: oldmanWebApp.loadingTip.show,
+    loadScript: oldmanWebApp.scriptLoader.load,
     hash: oldmanWebApp.link.hash,
     baseHash: oldmanWebApp.link.hash,
     addHash: oldmanWebApp.link.addHash,
     sameHash: oldmanWebApp.link.sameHash,
     open: oldmanWebApp.open,
-    loadScript: oldmanWebApp.scriptLoader.load,
     event: oldmanWebApp.event,
     close: oldmanWebApp.viewClose,
     init: oldmanWebApp.init
