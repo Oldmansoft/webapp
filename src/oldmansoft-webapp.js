@@ -1,5 +1,5 @@
 ﻿/*
-* v0.2.17
+* v0.3.18
 * https://github.com/Oldmansoft/webapp
 * Copyright 2016 Oldmansoft, Inc; http://www.apache.org/licenses/LICENSE-2.0
 */
@@ -20,7 +20,7 @@ oldmanWebApp = {
     _activeView: null,
     _fnOnUnauthorized: function () { return false; },
     _currentViewEvent: null,
-    _isDealEmptyTarget: true,
+    _isDealLinkEmptyTarget: true,
     _isReplacePCScrollBar: true,
     _isCreateWebAppScrollBar: false,
     _scrollbar: [],
@@ -152,6 +152,12 @@ oldmanWebApp = {
                 isSetTrackPosition = true;
                 return true;
             }
+            this.bindMouseWheel = function () {
+                $(window).bind("mousewheel", targetMouseWheel);
+            }
+            this.unbindMouseWheel = function () {
+                $(window).unbind("mousewheel", targetMouseWheel);
+            }
         }
 
         function otherTarget($t, dom) {
@@ -170,6 +176,12 @@ oldmanWebApp = {
             }
             this.setTrackPosition = function () {
                 return false;
+            }
+            this.bindMouseWheel = function () {
+                $t.bind("mousewheel", targetMouseWheel);
+            }
+            this.unbindMouseWheel = function () {
+                $t.unbind("mousewheel", targetMouseWheel);
             }
         }
 
@@ -254,17 +266,17 @@ oldmanWebApp = {
         track.mousedown(arrowMouseDown);
         arrow.mousedown(arrowMouseDown);
         $(window).bind("resize", reset);
-        target.bind("mousewheel", targetMouseWheel);
+        targetHelper.bindMouseWheel();
 
         this.show = function () {
             if (isShow) return;
             container.show();
-            target.bind("mousewheel", targetMouseWheel);
+            targetHelper.bindMouseWheel();
             isShow = true;
         }
         this.hide = function () {
             if (!isShow) return;
-            target.unbind("mousewheel", targetMouseWheel);
+            targetHelper.unbindMouseWheel();
             container.hide();
             isShow = false;
         }
@@ -517,6 +529,10 @@ oldmanWebApp = {
         }
         this.alert = function (content, title, fn) {
             var builder = new elementBuilder();
+            if (typeof title == "function") {
+                fn = title;
+                title = null;
+            }
             if (title) {
                 builder.setHead(title);
             }
@@ -524,8 +540,16 @@ oldmanWebApp = {
             builder.setFooter().set(oldmanWebApp.text.confirm, fn);
             oldmanWebApp.messageBox.open(builder.get("alert"));
         }
-        this.confirm = function (content, fnConfirm, fnCancel) {
+        this.confirm = function (content, title, fnConfirm, fnCancel) {
             var builder = new elementBuilder();
+            if (typeof title == "function") {
+                fnCancel = fnConfirm;
+                fnConfirm = title;
+                title = null;
+            }
+            if (title) {
+                builder.setHead(title);
+            }
             builder.setBody(content);
             builder.setFooter().set(oldmanWebApp.text.confirm, fnConfirm).set(oldmanWebApp.text.cancel, fnCancel);
             oldmanWebApp.messageBox.open(builder.get("confirm"));
@@ -686,8 +710,8 @@ oldmanWebApp = {
                 lastNode.remove();
             });
             event.load("open", links.count());
-            oldmanWebApp.resetScrollbar();
             event.active("open", links.count());
+            oldmanWebApp.resetScrollbar();
         }
 
         this.load = function (link) {
@@ -778,8 +802,8 @@ oldmanWebApp = {
             event = oldmanWebApp._currentViewEvent;
             links.setLastContext(view, event, "main", links.count());
             event.load("main", links.count());
-            oldmanWebApp.resetScrollbar();
             event.active("main", links.count());
+            oldmanWebApp.resetScrollbar();
             $(window).scrollTop(0);
             oldmanWebApp.dealScrollToVisibleLoading();
         }
@@ -942,6 +966,7 @@ oldmanWebApp = {
             $.get(src, function (data) {
                 loading.before(data);
                 loading.remove();
+                oldmanWebApp.resetScrollbar();
                 oldmanWebApp.dealScrollToVisibleLoading();
             });
         }
@@ -989,9 +1014,9 @@ oldmanWebApp = {
             oldmanWebApp._fnOnUnauthorized = fn;
             return this;
         }
-        this.dealEmptyTarget = function (b) {
-            if (b == undefined) return oldmanWebApp._isDealEmptyTarget;
-            oldmanWebApp._isDealEmptyTarget = b;
+        this.dealLinkEmptyTarget = function (b) {
+            if (b == undefined) return oldmanWebApp._isDealLinkEmptyTarget;
+            oldmanWebApp._isDealLinkEmptyTarget = b;
             return this;
         }
         this.replacePCScrollBar = function (b) {
@@ -1020,7 +1045,7 @@ oldmanWebApp = {
             }
 
             if (!target) {
-                if (!oldmanWebApp._isDealEmptyTarget) return;
+                if (!oldmanWebApp._isDealLinkEmptyTarget) return;
                 e.preventDefault();
                 oldmanWebApp.dealHrefTarget._base(href);
                 return;
