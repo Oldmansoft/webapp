@@ -1,5 +1,5 @@
 ﻿/*
-* v0.2.16
+* v0.2.17
 * https://github.com/Oldmansoft/webapp
 * Copyright 2016 Oldmansoft, Inc; http://www.apache.org/licenses/LICENSE-2.0
 */
@@ -21,9 +21,30 @@ oldmanWebApp = {
     _fnOnUnauthorized: function () { return false; },
     _currentViewEvent: null,
     _isDealEmptyTarget: true,
+    _isReplacePCScrollBar: true,
+    _isCreateWebAppScrollBar: false,
     _scrollbar: [],
+    _isUserPC: false,
     messageBox: null,
     windowBox: null,
+
+    getUserIsPC: function () {
+        var pda_user_agent_list = ["2.0 MMP", "240320", "AvantGo", "BlackBerry", "Blazer",
+            "Cellphone", "Danger", "DoCoMo", "Elaine/3.0", "EudoraWeb", "hiptop", "IEMobile", "KYOCERA/WX310K", "LG/U990",
+            "MIDP-2.0", "MMEF20", "MOT-V", "NetFront", "Newt", "Nintendo Wii", "Nitro", "Nokia",
+            "Opera Mini", "Opera Mobi",
+            "Palm", "Playstation Portable", "portalmmm", "Proxinet", "ProxiNet",
+            "SHARP-TQ-GX10", "Small", "SonyEricsson", "Symbian OS", "SymbianOS", "TS21i-10", "UP.Browser", "UP.Link",
+            "Windows CE", "WinWAP", "Android", "iPhone", "iPod", "iPad", "Windows Phone", "HTC"],
+            userAgent = navigator.userAgent,
+            i;
+        for (i = 0; i < pda_user_agent_list.length; i++) {
+            if (userAgent.indexOf(pda_user_agent_list[i]) > -1) {
+                return false;
+            }
+        }
+        return true;
+    },
 
     getAbsolutePath: function (path, basePath, defaultLink) {
         if (path == "") path = defaultLink;
@@ -255,6 +276,10 @@ oldmanWebApp = {
     resetScrollbar: function () {
         for (var i = 0 ; i < oldmanWebApp._scrollbar.length; i++) {
             oldmanWebApp._scrollbar[i].reset();
+        }
+        if (oldmanWebApp._isUserPC && oldmanWebApp._isReplacePCScrollBar && !oldmanWebApp._isCreateWebAppScrollBar) {
+            new oldmanWebApp.scrollbar("body");
+            oldmanWebApp._isCreateWebAppScrollBar = true;
         }
     },
 
@@ -969,6 +994,10 @@ oldmanWebApp = {
             oldmanWebApp._isDealEmptyTarget = b;
             return this;
         }
+        this.replacePCScrollBar = function (b) {
+            oldmanWebApp._isReplacePCScrollBar = b;
+            return this;
+        }
     },
 
     init: function (viewNode, defaultLink) {
@@ -1005,6 +1034,7 @@ oldmanWebApp = {
         $(window).bind("scroll", oldmanWebApp.dealScrollToVisibleLoading);
         $(window).bind("resize", oldmanWebApp.dealScrollToVisibleLoading);
 
+        oldmanWebApp._isUserPC = oldmanWebApp.getUserIsPC();
         oldmanWebApp._mainView = new oldmanWebApp.viewArea(viewNode, defaultLink);
         oldmanWebApp._openView = new oldmanWebApp.openArea(defaultLink);
         oldmanWebApp._activeView = oldmanWebApp._mainView;
