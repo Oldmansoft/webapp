@@ -1,5 +1,5 @@
 ﻿/*
-* v0.2.15
+* v0.2.16
 * https://github.com/Oldmansoft/webapp
 * Copyright 2016 Oldmansoft, Inc; http://www.apache.org/licenses/LICENSE-2.0
 */
@@ -21,6 +21,7 @@ oldmanWebApp = {
     _fnOnUnauthorized: function () { return false; },
     _currentViewEvent: null,
     _isDealEmptyTarget: true,
+    _scrollbar: [],
     messageBox: null,
     windowBox: null,
 
@@ -91,6 +92,169 @@ oldmanWebApp = {
             if (count < 0) {
                 throw "shrink error";
             }
+        }
+    },
+
+    scrollbar: function (target) {
+        if (!target) return;
+        var targetDom,
+            targetHelper,
+            container,
+            track,
+            trackWidth,
+            arrow,
+            arrowHeight,
+            html,
+            downTargetTop,
+            downMouseY,
+            isShow = true;
+
+        function bodyTarget(dom) {
+            var contentHeight,
+                viewHeight
+                isSetTrackPosition = false;
+            this.contentHeight = function () {
+                return contentHeight;
+            }
+            this.viewHeight = function () {
+                return viewHeight;
+            }
+            this.setHeight = function () {
+                contentHeight = dom.scrollHeight;
+                viewHeight = window.innerHeight;
+            }
+            this.setTrackPosition = function (track) {
+                if (isSetTrackPosition) return true;
+                track.css("position", "fixed");
+                track.css("right", 0);
+                track.css("top", 0);
+                isSetTrackPosition = true;
+                return true;
+            }
+        }
+
+        function otherTarget($t, dom) {
+            var contentHeight,
+                viewHeight;
+
+            this.contentHeight = function () {
+                return contentHeight;
+            }
+            this.viewHeight = function () {
+                return viewHeight;
+            }
+            this.setHeight = function () {
+                contentHeight = dom.scrollHeight;
+                viewHeight = $t.innerHeight();
+            }
+            this.setTrackPosition = function () {
+                return false;
+            }
+        }
+
+        function setArrowPosition() {
+            arrow.css("top", (targetHelper.viewHeight() - arrowHeight) * target.scrollTop() / (targetHelper.contentHeight() - targetHelper.viewHeight()));
+        }
+
+        function targetMouseWheel(e) {
+            if (targetHelper.contentHeight() <= targetHelper.viewHeight()) return true;
+            var delta = e.originalEvent.wheelDelta,
+                targetScrollTop = target.scrollTop();
+            if (delta < 0) {
+                if (targetScrollTop >= (targetHelper.contentHeight() - targetHelper.viewHeight())) {
+                    return true;
+                }
+            } else {
+                if (targetScrollTop == 0) {
+                    return true;
+                }
+            }
+            target.scrollTop(targetScrollTop - delta);
+            setArrowPosition()
+            return false;
+        }
+
+        function arrowMouseDown(e) {
+            downMouseY = e.clientY;
+            downTargetTop = target.scrollTop();
+            html.bind("selectstart", htmlSelectStart);
+            html.bind("mousemove", htmlMouseMove);
+            html.bind("mouseup", htmlMouseUp);
+        }
+
+        function htmlSelectStart() {
+            return false;
+        }
+
+        function htmlMouseUp() {
+            html.unbind("selectstart", htmlSelectStart);
+            html.unbind("mousemove", htmlMouseMove);
+            html.unbind("mouseup", htmlMouseUp);
+        }
+
+        function htmlMouseMove(e) {
+            var per = (targetHelper.contentHeight() - targetHelper.viewHeight()) / (targetHelper.viewHeight() - arrowHeight)
+            target.scrollTop(downTargetTop - (downMouseY - e.clientY) * per);
+            setArrowPosition();
+        }
+
+        function reset() {
+            targetHelper.setHeight();
+            if (targetHelper.viewHeight() == 0 || targetHelper.contentHeight() <= targetHelper.viewHeight()) {
+                track.hide();
+                return;
+            } else {
+                track.show();
+            }
+            track.height(targetHelper.viewHeight());
+            if (!targetHelper.setTrackPosition(track)) {
+                track.css("left", target.innerWidth() - parseInt(target.css("padding-left")) - trackWidth);
+                track.css("top", -parseInt(target.css("padding-top")));
+            }
+            arrowHeight = track.height() * targetHelper.viewHeight() / targetHelper.contentHeight();
+            if (arrowHeight < 20) arrowHeight = 20;
+            arrow.height(arrowHeight);
+        }
+
+        target = $(target);
+        targetDom = target.get(0);
+        targetHelper = targetDom.tagName == "BODY" ? new bodyTarget(targetDom) : new otherTarget(target, targetDom);
+        html = $("html");
+        target.css("overflow", "hidden");
+        container = $("<div></div>").addClass("scrollbar-container");
+        track = $("<div></div>").addClass("scrollbar-track");
+        arrow = $("<div></div>").addClass("scrollbar-arrow");
+        container.append(track);
+        track.append(arrow);
+        target.prepend(container);
+        trackWidth = track.width();
+        reset();
+        oldmanWebApp._scrollbar.push(this);
+        track.mousedown(arrowMouseDown);
+        arrow.mousedown(arrowMouseDown);
+        $(window).bind("resize", reset);
+        target.bind("mousewheel", targetMouseWheel);
+
+        this.show = function () {
+            if (isShow) return;
+            container.show();
+            target.bind("mousewheel", targetMouseWheel);
+            isShow = true;
+        }
+        this.hide = function () {
+            if (!isShow) return;
+            target.unbind("mousewheel", targetMouseWheel);
+            container.hide();
+            isShow = false;
+        }
+        this.reset = function () {
+            reset();
+        }
+    },
+
+    resetScrollbar: function () {
+        for (var i = 0 ; i < oldmanWebApp._scrollbar.length; i++) {
+            oldmanWebApp._scrollbar[i].reset();
         }
     },
 
@@ -478,7 +642,6 @@ oldmanWebApp = {
             if (links.count() > 0) {
                 links.last().hide();
             } else {
-                oldmanWebApp._mainView.inactiveCurrent();
                 oldmanWebApp._activeView = oldmanWebApp._openView;
             }
 
@@ -498,6 +661,7 @@ oldmanWebApp = {
                 lastNode.remove();
             });
             event.load("open", links.count());
+            oldmanWebApp.resetScrollbar();
             event.active("open", links.count());
         }
 
@@ -547,13 +711,12 @@ oldmanWebApp = {
 
         this.close = function () {
             links.pop();
-            oldmanWebApp.windowBox.hide(null, function () {
+            oldmanWebApp.windowBox.close(null, function () {
                 var current = links.last();
                 if (current) {
                     current.show();
                 } else {
                     oldmanWebApp._activeView = oldmanWebApp._mainView;
-                    oldmanWebApp._mainView.activeCurrent();
                 }
             });
         }
@@ -590,6 +753,7 @@ oldmanWebApp = {
             event = oldmanWebApp._currentViewEvent;
             links.setLastContext(view, event, "main", links.count());
             event.load("main", links.count());
+            oldmanWebApp.resetScrollbar();
             event.active("main", links.count());
             $(window).scrollTop(0);
             oldmanWebApp.dealScrollToVisibleLoading();
@@ -711,14 +875,6 @@ oldmanWebApp = {
 
         this.setDefaultLink = function (link) {
             defaultLink = link;
-        }
-
-        this.activeCurrent = function () {
-            links.last().show();
-        }
-
-        this.inactiveCurrent = function () {
-            links.last().hide();
         }
     },
 

@@ -81,3 +81,22 @@
     margin: 10px;
     padding: 10px;
 }
+
+.scrollbar-container {
+    position: absolute;
+}
+.scrollbar-track {
+    position: relative;
+    width: 12px;
+    background-color: darkgray;
+    opacity: 0.5;
+}
+.scrollbar-track:hover {
+    opacity: 0.9;
+}
+.scrollbar-arrow {
+    position: relative;
+    width: 12px;
+    height: 80px;
+    background-color: gray;
+}
