@@ -1,5 +1,5 @@
 ﻿/*
-* v0.3.18
+* v0.3.19
 * https://github.com/Oldmansoft/webapp
 * Copyright 2016 Oldmansoft, Inc; http://www.apache.org/licenses/LICENSE-2.0
 */
@@ -22,7 +22,7 @@ oldmanWebApp = {
     _currentViewEvent: null,
     _isDealLinkEmptyTarget: true,
     _isReplacePCScrollBar: true,
-    _isCreateWebAppScrollBar: false,
+    _WindowScrollBar: null,
     _scrollbar: [],
     _isUserPC: false,
     messageBox: null,
@@ -289,9 +289,15 @@ oldmanWebApp = {
         for (var i = 0 ; i < oldmanWebApp._scrollbar.length; i++) {
             oldmanWebApp._scrollbar[i].reset();
         }
-        if (oldmanWebApp._isUserPC && oldmanWebApp._isReplacePCScrollBar && !oldmanWebApp._isCreateWebAppScrollBar) {
-            new oldmanWebApp.scrollbar("body");
-            oldmanWebApp._isCreateWebAppScrollBar = true;
+    },
+
+    resetWindowScrollbar: function () {
+        if (oldmanWebApp._WindowScrollBar) {
+            oldmanWebApp._WindowScrollBar.reset();
+            return;
+        }
+        if (oldmanWebApp._isUserPC && oldmanWebApp._isReplacePCScrollBar) {
+            oldmanWebApp._WindowScrollBar = new oldmanWebApp.scrollbar("body");
         }
     },
 
@@ -711,7 +717,6 @@ oldmanWebApp = {
             });
             event.load("open", links.count());
             event.active("open", links.count());
-            oldmanWebApp.resetScrollbar();
         }
 
         this.load = function (link) {
@@ -803,7 +808,7 @@ oldmanWebApp = {
             links.setLastContext(view, event, "main", links.count());
             event.load("main", links.count());
             event.active("main", links.count());
-            oldmanWebApp.resetScrollbar();
+            oldmanWebApp.resetWindowScrollbar();
             $(window).scrollTop(0);
             oldmanWebApp.dealScrollToVisibleLoading();
         }
@@ -966,7 +971,7 @@ oldmanWebApp = {
             $.get(src, function (data) {
                 loading.before(data);
                 loading.remove();
-                oldmanWebApp.resetScrollbar();
+                oldmanWebApp.resetWindowScrollbar();
                 oldmanWebApp.dealScrollToVisibleLoading();
             });
         }
