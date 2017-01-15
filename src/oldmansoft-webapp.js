@@ -1,5 +1,5 @@
 ﻿/*
-* v0.3.19
+* v0.3.20
 * https://github.com/Oldmansoft/webapp
 * Copyright 2016 Oldmansoft, Inc; http://www.apache.org/licenses/LICENSE-2.0
 */
@@ -24,7 +24,7 @@ oldmanWebApp = {
     _isReplacePCScrollBar: true,
     _WindowScrollBar: null,
     _scrollbar: [],
-    _isUserPC: false,
+    _isUserPC: null,
     messageBox: null,
     windowBox: null,
 
@@ -101,6 +101,7 @@ oldmanWebApp = {
         this.expand = function () {
             if (count == 0) {
                 $("body").addClass("layout-expanded");
+                if (oldmanWebApp._WindowScrollBar) oldmanWebApp._WindowScrollBar.hide();
             }
             count++;
         }
@@ -109,6 +110,7 @@ oldmanWebApp = {
             count--;
             if (count == 0) {
                 $("body").removeClass("layout-expanded");
+                if (oldmanWebApp._WindowScrollBar) oldmanWebApp._WindowScrollBar.show();
             }
             if (count < 0) {
                 throw "shrink error";
@@ -295,6 +297,9 @@ oldmanWebApp = {
         if (oldmanWebApp._WindowScrollBar) {
             oldmanWebApp._WindowScrollBar.reset();
             return;
+        }
+        if (oldmanWebApp._isUserPC == null) {
+            oldmanWebApp._isUserPC = oldmanWebApp.getUserIsPC();
         }
         if (oldmanWebApp._isUserPC && oldmanWebApp._isReplacePCScrollBar) {
             oldmanWebApp._WindowScrollBar = new oldmanWebApp.scrollbar("body");
@@ -1064,7 +1069,6 @@ oldmanWebApp = {
         $(window).bind("scroll", oldmanWebApp.dealScrollToVisibleLoading);
         $(window).bind("resize", oldmanWebApp.dealScrollToVisibleLoading);
 
-        oldmanWebApp._isUserPC = oldmanWebApp.getUserIsPC();
         oldmanWebApp._mainView = new oldmanWebApp.viewArea(viewNode, defaultLink);
         oldmanWebApp._openView = new oldmanWebApp.openArea(defaultLink);
         oldmanWebApp._activeView = oldmanWebApp._mainView;
