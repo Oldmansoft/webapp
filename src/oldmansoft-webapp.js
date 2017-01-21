@@ -1,5 +1,5 @@
 ﻿/*
-* v0.3.21
+* v0.3.22
 * https://github.com/Oldmansoft/webapp
 * Copyright 2016 Oldmansoft, Inc; http://www.apache.org/licenses/LICENSE-2.0
 */
@@ -24,27 +24,9 @@ oldmanWebApp = {
     _isReplacePCScrollBar: true,
     _WindowScrollBar: null,
     _scrollbar: [],
-    _isUserPC: null,
+    _canTouch: null,
     messageBox: null,
     windowBox: null,
-
-    getUserIsPC: function () {
-        var pda_user_agent_list = ["2.0 MMP", "240320", "AvantGo", "BlackBerry", "Blazer",
-            "Cellphone", "Danger", "DoCoMo", "Elaine/3.0", "EudoraWeb", "hiptop", "IEMobile", "KYOCERA/WX310K", "LG/U990",
-            "MIDP-2.0", "MMEF20", "MOT-V", "NetFront", "Newt", "Nintendo Wii", "Nitro", "Nokia",
-            "Opera Mini", "Opera Mobi",
-            "Palm", "Playstation Portable", "portalmmm", "Proxinet", "ProxiNet",
-            "SHARP-TQ-GX10", "Small", "SonyEricsson", "Symbian OS", "SymbianOS", "TS21i-10", "UP.Browser", "UP.Link",
-            "Windows CE", "WinWAP", "Android", "iPhone", "iPod", "iPad", "Windows Phone", "HTC"],
-            userAgent = navigator.userAgent,
-            i;
-        for (i = 0; i < pda_user_agent_list.length; i++) {
-            if (userAgent.indexOf(pda_user_agent_list[i]) > -1) {
-                return false;
-            }
-        }
-        return true;
-    },
 
     getAbsolutePath: function (path, basePath, defaultLink) {
         if (path == "") path = defaultLink;
@@ -298,10 +280,10 @@ oldmanWebApp = {
             oldmanWebApp._WindowScrollBar.reset();
             return;
         }
-        if (oldmanWebApp._isUserPC == null) {
-            oldmanWebApp._isUserPC = oldmanWebApp.getUserIsPC();
+        if (oldmanWebApp._canTouch == null) {
+            oldmanWebApp._canTouch = "ontouchmove" in document;
         }
-        if (oldmanWebApp._isUserPC && oldmanWebApp._isReplacePCScrollBar) {
+        if (!oldmanWebApp._canTouch && oldmanWebApp._isReplacePCScrollBar) {
             oldmanWebApp._WindowScrollBar = new oldmanWebApp.scrollbar("body");
         }
     },
@@ -1004,6 +986,12 @@ oldmanWebApp = {
         }
     },
 
+    dealTouchMove: function (e) {
+        if ($("body").hasClass("layout-expanded")) {
+            e.preventDefault();
+        }
+    },
+
     dealHrefTarget: {
         _base: function (href) {
             oldmanWebApp.link.hash(href);
@@ -1090,6 +1078,8 @@ oldmanWebApp = {
         });
         $(window).bind("scroll", oldmanWebApp.dealScrollToVisibleLoading);
         $(window).bind("resize", oldmanWebApp.dealScrollToVisibleLoading);
+        $(document).bind("touchmove", oldmanWebApp.dealTouchMove);
+        $(document).bind("touchstart", oldmanWebApp.dealTouchStart);
 
         oldmanWebApp._mainView = new oldmanWebApp.viewArea(viewNode, defaultLink);
         oldmanWebApp._openView = new oldmanWebApp.openArea(defaultLink);
