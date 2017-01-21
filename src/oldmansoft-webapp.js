@@ -1,5 +1,5 @@
 ﻿/*
-* v0.3.22
+* v0.4.23
 * https://github.com/Oldmansoft/webapp
 * Copyright 2016 Oldmansoft, Inc; http://www.apache.org/licenses/LICENSE-2.0
 */
@@ -309,7 +309,7 @@ oldmanWebApp = {
             this.scrollLeft = 0;
             this.event = null;
             this.visible = true;
-            this.view = null;
+            this.target = null;
             this.level = 0;
 
             this.hide = function () {
@@ -317,15 +317,15 @@ oldmanWebApp = {
                 var win = $(window);
                 this.scrollTop = win.scrollTop();
                 this.scrollLeft = win.scrollLeft();
-                this.event.inactive(this.view, this.level);
+                this.event.inactive(this.node, this.target, this.level);
                 this.node.hide();
                 this.visible = false;
             }
 
             this.remove = function () {
                 if (!this.node) return;
-                this.event.inactive(this.view, this.level);
-                this.event.unload(this.view, this.level);
+                this.event.inactive(this.node, this.target, this.level);
+                this.event.unload(this.node, this.target, this.level);
                 this.node.remove();
                 this.node = null;
                 this.event = null;
@@ -334,7 +334,7 @@ oldmanWebApp = {
             this.show = function () {
                 if (!this.node || this.visible) return;
                 this.node.show();
-                this.event.active(this.view, this.level);
+                this.event.active(this.node, this.target, this.level);
                 $(window).scrollLeft(this.scrollLeft);
                 $(window).scrollTop(this.scrollTop);
                 this.visible = true;
@@ -342,13 +342,13 @@ oldmanWebApp = {
 
             this.activeEvent = function () {
                 if (this.event) {
-                    this.event.active(this.view, this.level);
+                    this.event.active(this.node, this.target, this.level);
                 }
             }
 
             this.inactiveEvent = function () {
                 if (this.event) {
-                    this.event.inactive(this.view, this.level);
+                    this.event.inactive(this.node, this.target, this.level);
                 }
             }
         }
@@ -365,11 +365,11 @@ oldmanWebApp = {
             return context[context.length - 1];
         }
 
-        this.setLastContext = function (node, event, view, level) {
+        this.setLastContext = function (node, event, target, level) {
             var last = this.last();
             last.node = node;
             last.event = event;
-            last.view = view;
+            last.target = target;
             last.level = level;
             return last;
         }
@@ -715,8 +715,8 @@ oldmanWebApp = {
             oldmanWebApp.windowBox.open(view, function () {
                 lastNode.remove();
             });
-            event.load("open", links.count());
-            event.active("open", links.count());
+            event.load(view, "open", links.count());
+            event.active(view, "open", links.count());
         }
 
         this.load = function (link) {
@@ -807,8 +807,8 @@ oldmanWebApp = {
 
             event = oldmanWebApp._currentViewEvent;
             links.setLastContext(view, event, "main", links.count());
-            event.load("main", links.count());
-            event.active("main", links.count());
+            event.load(view, "main", links.count());
+            event.active(view, "main", links.count());
             oldmanWebApp.resetWindowScrollbar();
             $(window).scrollTop(0);
             oldmanWebApp.dealScrollToVisibleLoading();
