@@ -1,5 +1,5 @@
 ﻿/*
-* v0.4.23
+* v0.4.24
 * https://github.com/Oldmansoft/webapp
 * Copyright 2016 Oldmansoft, Inc; http://www.apache.org/licenses/LICENSE-2.0
 */
@@ -987,8 +987,22 @@ oldmanWebApp = {
     },
 
     dealTouchMove: function (e) {
+        var path,
+            i,
+            isCancel = true;
+
         if ($("body").hasClass("layout-expanded")) {
-            e.preventDefault();
+            path = e.originalEvent.path
+            for (i = 0; i < path.length; i++) {
+                if (path[i].tagName == "BODY") break;
+                if (path[i].scrollHeight > path[i].clientHeight) {
+                    isCancel = false;
+                    break;
+                }
+            }
+            if (isCancel) {
+                e.preventDefault();
+            }
         }
     },
 
