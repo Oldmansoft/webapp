@@ -1,5 +1,5 @@
 ﻿/*
-* v0.4.24
+* v0.4.25
 * https://github.com/Oldmansoft/webapp
 * Copyright 2016 Oldmansoft, Inc; http://www.apache.org/licenses/LICENSE-2.0
 */
@@ -1100,7 +1100,7 @@ oldmanWebApp = {
         oldmanWebApp._activeView = oldmanWebApp._mainView;
         oldmanWebApp.link._init(function (link) {
             oldmanWebApp._mainView.load(link);
-        }, defaultLink);
+        });
         return new oldmanWebApp.initOption(oldmanWebApp._mainView);
     }
 }
