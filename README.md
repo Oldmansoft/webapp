@@ -194,6 +194,11 @@ $app.addHash("/path");
 $app.sameHash("/path");
 ```
 
+##### 重载当前主视图
+```js
+$app.reload();
+```
+
 ##### 打开新的窗体视图
 相当于链接的目标 _open。
 ```js

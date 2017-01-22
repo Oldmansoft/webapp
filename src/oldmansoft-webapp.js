@@ -1,5 +1,5 @@
 ﻿/*
-* v0.4.25
+* v0.4.26
 * https://github.com/Oldmansoft/webapp
 * Copyright 2016 Oldmansoft, Inc; http://www.apache.org/licenses/LICENSE-2.0
 */
@@ -1120,6 +1120,7 @@ $app = {
     baseHash: oldmanWebApp.link.hash,
     addHash: oldmanWebApp.link.addHash,
     sameHash: oldmanWebApp.link.sameHash,
+    reload: oldmanWebApp.link.refresh,
     open: oldmanWebApp.open,
     event: oldmanWebApp.event,
     close: oldmanWebApp.viewClose,
