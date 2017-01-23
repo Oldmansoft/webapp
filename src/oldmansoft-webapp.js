@@ -1,5 +1,5 @@
 ﻿/*
-* v0.4.26
+* v0.4.27
 * https://github.com/Oldmansoft/webapp
 * Copyright 2016 Oldmansoft, Inc; http://www.apache.org/licenses/LICENSE-2.0
 */
@@ -885,6 +885,7 @@ oldmanWebApp = {
                     }
                 }
                 links.get(hrefs.length - 1).show();
+                oldmanWebApp.resetWindowScrollbar();
                 return;
             }
 
