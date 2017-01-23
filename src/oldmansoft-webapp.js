@@ -1,5 +1,5 @@
 ﻿/*
-* v0.4.27
+* v0.5.28
 * https://github.com/Oldmansoft/webapp
 * Copyright 2016 Oldmansoft, Inc; http://www.apache.org/licenses/LICENSE-2.0
 */
@@ -292,64 +292,81 @@ oldmanWebApp = {
         return $("<div></div>").addClass(name + "-view").data("link", link);
     },
 
-    createEvent: function () {
+    viewEvent: function () {
         this.load = function () { };
         this.unload = function () { };
         this.active = function () { };
         this.inactive = function () { };
     },
 
+    viewEventParameter: function (node, name, level) {
+        this.node = node;
+        this.name = name;
+        this.level = level;
+    },
+
     linkManagement: function () {
         var context = [];
 
         function item(link) {
+            var eventParameter,
+                visible = true,
+                scrollTop = 0,
+                scrollLeft = 0,
+                viewEvent;
+
             this.link = link;
             this.node = null;
-            this.scrollTop = 0;
-            this.scrollLeft = 0;
-            this.event = null;
-            this.visible = true;
-            this.target = null;
-            this.level = 0;
 
             this.hide = function () {
-                if (!this.node || !this.visible) return;
+                if (!this.node || !visible) return;
                 var win = $(window);
-                this.scrollTop = win.scrollTop();
-                this.scrollLeft = win.scrollLeft();
-                this.event.inactive(this.node, this.target, this.level);
+                scrollTop = win.scrollTop();
+                scrollLeft = win.scrollLeft();
+                viewEvent.inactive(eventParameter);
                 this.node.hide();
-                this.visible = false;
+                visible = false;
+            }
+
+            this.callLoadAndActive = function () {
+                viewEvent.load(eventParameter);
+                viewEvent.active(eventParameter);
             }
 
             this.remove = function () {
                 if (!this.node) return;
-                this.event.inactive(this.node, this.target, this.level);
-                this.event.unload(this.node, this.target, this.level);
+                viewEvent.inactive(eventParameter);
+                viewEvent.unload(eventParameter);
                 this.node.remove();
                 this.node = null;
-                this.event = null;
+                viewEvent = null;
             }
 
             this.show = function () {
-                if (!this.node || this.visible) return;
+                if (!this.node || visible) return;
                 this.node.show();
-                this.event.active(this.node, this.target, this.level);
-                $(window).scrollLeft(this.scrollLeft);
-                $(window).scrollTop(this.scrollTop);
-                this.visible = true;
+                viewEvent.active(eventParameter);
+                $(window).scrollLeft(scrollLeft);
+                $(window).scrollTop(scrollTop);
+                visible = true;
             }
 
             this.activeEvent = function () {
-                if (this.event) {
-                    this.event.active(this.node, this.target, this.level);
+                if (viewEvent) {
+                    viewEvent.active(eventParameter);
                 }
             }
 
             this.inactiveEvent = function () {
-                if (this.event) {
-                    this.event.inactive(this.node, this.target, this.level);
+                if (viewEvent) {
+                    viewEvent.inactive(eventParameter);
                 }
+            }
+
+            this.setContext = function (node, event, name, level) {
+                viewEvent = event;
+                eventParameter = new oldmanWebApp.viewEventParameter(node, name, level);
+                this.node = node;
             }
         }
 
@@ -365,12 +382,9 @@ oldmanWebApp = {
             return context[context.length - 1];
         }
 
-        this.setLastContext = function (node, event, target, level) {
+        this.setLastContext = function (node, event, name, level) {
             var last = this.last();
-            last.node = node;
-            last.event = event;
-            last.target = target;
-            last.level = level;
+            last.setContext(node, event, name, level);
             return last;
         }
 
@@ -701,7 +715,7 @@ oldmanWebApp = {
             }
 
             view = oldmanWebApp.createView("open", link);
-            oldmanWebApp._currentViewEvent = new oldmanWebApp.createEvent();
+            oldmanWebApp._currentViewEvent = new oldmanWebApp.viewEvent();
 
             if (second == undefined) {
                 view.html(first);
@@ -715,8 +729,7 @@ oldmanWebApp = {
             oldmanWebApp.windowBox.open(view, function () {
                 lastNode.remove();
             });
-            event.load(view, "open", links.count());
-            event.active(view, "open", links.count());
+            lastNode.callLoadAndActive();
         }
 
         this.load = function (link) {
@@ -797,7 +810,7 @@ oldmanWebApp = {
             if (onloadBefore) onloadBefore();
             view = oldmanWebApp.createView("main", link);
             element.append(view);
-            oldmanWebApp._currentViewEvent = new oldmanWebApp.createEvent();
+            oldmanWebApp._currentViewEvent = new oldmanWebApp.viewEvent();
 
             if (second == undefined) {
                 view.html(first);
@@ -806,9 +819,7 @@ oldmanWebApp = {
             }
 
             event = oldmanWebApp._currentViewEvent;
-            links.setLastContext(view, event, "main", links.count());
-            event.load(view, "main", links.count());
-            event.active(view, "main", links.count());
+            links.setLastContext(view, event, "main", links.count()).callLoadAndActive();
             oldmanWebApp.resetWindowScrollbar();
             $(window).scrollTop(0);
             oldmanWebApp.dealScrollToVisibleLoading();

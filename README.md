@@ -145,30 +145,31 @@ message.close();
 
 ### 视图事件
 
-视图有加载，激活，失效和卸载事件，并提供视图 view，目标 target(有 main 和 open 两个值)和层级参数 level。
+视图有加载，激活，失效和卸载事件，并提供参数 view。
+view 有属性视图节点 node，名称 name(有 main 和 open 两个值)和层级参数 level
 
 #### 加载事件
 当加载地址到视图区时，触发加载事件。
 ```js
-$app.event().onLoad(function (view, target, level) { });
+$app.event().onLoad(function (view) { });
 ```
 
 #### 激活事件
 当加载事件后或重新显示视图，触发激活事件。
 ```js
-$app.event().onActive(function (view, target, level) { });
+$app.event().onActive(function (view) { });
 ```
 
 #### 失效事件
 当视图被隐藏时，触发失效事件。
 ```js
-$app.event().onInactive(function (view, target, level) { });
+$app.event().onInactive(function (view) { });
 ```
 
 #### 卸载事件
 当视图被关闭或替换时，触发卸载事件。
 ```js
-$app.event().onUnload(function (view, target, level) { });
+$app.event().onUnload(function (view) { });
 ```
 
 ### 其它脚本方法
