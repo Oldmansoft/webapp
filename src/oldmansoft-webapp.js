@@ -1,5 +1,5 @@
 ﻿/*
-* v0.5.28
+* v0.5.29
 * https://github.com/Oldmansoft/webapp
 * Copyright 2016 Oldmansoft, Inc; http://www.apache.org/licenses/LICENSE-2.0
 */
@@ -881,6 +881,7 @@ oldmanWebApp = {
         }
 
         this.load = function (link) {
+            link = link.replace(/%23/g, '#');
             var hrefs = link.split("#"),
 	            i,
 	            context;
