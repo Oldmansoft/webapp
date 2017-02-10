@@ -1,5 +1,5 @@
 ﻿/*
-* v0.5.29
+* v0.5.30
 * https://github.com/Oldmansoft/webapp
 * Copyright 2016 Oldmansoft, Inc; http://www.apache.org/licenses/LICENSE-2.0
 */
@@ -25,6 +25,7 @@ oldmanWebApp = {
     _WindowScrollBar: null,
     _scrollbar: [],
     _canTouch: null,
+    _globalViewEvent: null,
     messageBox: null,
     windowBox: null,
 
@@ -323,20 +324,20 @@ oldmanWebApp = {
                 var win = $(window);
                 scrollTop = win.scrollTop();
                 scrollLeft = win.scrollLeft();
-                viewEvent.inactive(eventParameter);
+                oldmanWebApp._globalViewEvent.inactive(eventParameter, viewEvent.inactive(eventParameter));
                 this.node.hide();
                 visible = false;
             }
 
             this.callLoadAndActive = function () {
-                viewEvent.load(eventParameter);
-                viewEvent.active(eventParameter);
+                oldmanWebApp._globalViewEvent.load(eventParameter, viewEvent.load(eventParameter));
+                oldmanWebApp._globalViewEvent.active(eventParameter, viewEvent.active(eventParameter));
             }
 
             this.remove = function () {
                 if (!this.node) return;
-                viewEvent.inactive(eventParameter);
-                viewEvent.unload(eventParameter);
+                oldmanWebApp._globalViewEvent.inactive(eventParameter, viewEvent.inactive(eventParameter));
+                oldmanWebApp._globalViewEvent.unload(eventParameter, viewEvent.unload(eventParameter));
                 this.node.remove();
                 this.node = null;
                 viewEvent = null;
@@ -345,22 +346,20 @@ oldmanWebApp = {
             this.show = function () {
                 if (!this.node || visible) return;
                 this.node.show();
-                viewEvent.active(eventParameter);
+                oldmanWebApp._globalViewEvent.active(eventParameter, viewEvent.active(eventParameter));
                 $(window).scrollLeft(scrollLeft);
                 $(window).scrollTop(scrollTop);
                 visible = true;
             }
 
             this.activeEvent = function () {
-                if (viewEvent) {
-                    viewEvent.active(eventParameter);
-                }
+                if (!viewEvent) return;
+                oldmanWebApp._globalViewEvent.active(eventParameter, viewEvent.active(eventParameter));
             }
 
             this.inactiveEvent = function () {
-                if (viewEvent) {
-                    viewEvent.inactive(eventParameter);
-                }
+                if (!viewEvent) return;
+                oldmanWebApp._globalViewEvent.inactive(eventParameter, viewEvent.inactive(eventParameter));
             }
 
             this.setContext = function (node, event, name, level) {
@@ -1070,6 +1069,22 @@ oldmanWebApp = {
             oldmanWebApp._isReplacePCScrollBar = b;
             return this;
         }
+        this.viewLoaded = function (fn) {
+            oldmanWebApp._globalViewEvent.load = fn;
+            return this;
+        }
+        this.viewActived= function (fn) {
+            oldmanWebApp._globalViewEvent.active = fn;
+            return this;
+        }
+        this.viewInactived = function (fn) {
+            oldmanWebApp._globalViewEvent.inactive = fn;
+            return this;
+        }
+        this.viewUnloaded = function (fn) {
+            oldmanWebApp._globalViewEvent.unload = fn;
+            return this;
+        }
     },
 
     init: function (viewNode, defaultLink) {
@@ -1108,6 +1123,7 @@ oldmanWebApp = {
         $(document).bind("touchmove", oldmanWebApp.dealTouchMove);
         $(document).bind("touchstart", oldmanWebApp.dealTouchStart);
 
+        oldmanWebApp._globalViewEvent = new oldmanWebApp.viewEvent();
         oldmanWebApp._mainView = new oldmanWebApp.viewArea(viewNode, defaultLink);
         oldmanWebApp._openView = new oldmanWebApp.openArea(defaultLink);
         oldmanWebApp._activeView = oldmanWebApp._mainView;

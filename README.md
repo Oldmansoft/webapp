@@ -44,7 +44,7 @@ var option = $app.init($("#ViewArea"), "/path");
 option.unauthorized(function () {
     alert(encodeURIComponent(document.location.pathname + document.location.hash));
     return true;
-})
+});
 ```
 
 #### 主视图区域
@@ -69,6 +69,19 @@ option.dealLinkEmptyTarget(true);
 默认值为真。
 ```js
 option.replacePCScrollBar(true);
+```
+
+#### 全局视图事件
+view 参数参考《视图事件》，第二个参数为视图事件相应方法的返回值
+```js
+option.viewLoaded(function (view, loadReturn) {
+});
+option.viewActived(function (view, activeReturn) {
+});
+option.viewInactived(function (view, inactiveReturn) {
+});
+option.viewUnloaded(function (view, unloadReturn) {
+});
 ```
 
 ### 链接目标
