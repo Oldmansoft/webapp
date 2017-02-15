@@ -1,5 +1,5 @@
 ﻿/*
-* v0.5.30
+* v0.5.31
 * https://github.com/Oldmansoft/webapp
 * Copyright 2016 Oldmansoft, Inc; http://www.apache.org/licenses/LICENSE-2.0
 */
@@ -30,12 +30,33 @@ oldmanWebApp = {
     windowBox: null,
 
     getAbsolutePath: function (path, basePath, defaultLink) {
+        var indexOfAmpersand,
+            indexOfQuestion,
+            pathnames;
         if (path == "") path = defaultLink;
+        indexOfAmpersand = path.indexOf("&");
+        if (indexOfAmpersand > -1) {
+            indexOfQuestion = path.indexOf("?");
+            if (indexOfQuestion == -1 || indexOfAmpersand < indexOfQuestion) {
+                path = path.substr(0, indexOfAmpersand);
+            }
+        }
         if (path.substr(0, 1) == "/") {
             return path;
         }
-        if (!basePath) basePath = document.location.pathname;
-        var pathnames = basePath.split("/");
+        if (!basePath) {
+            basePath = document.location.pathname;
+        } else {
+            indexOfQuestion = basePath.indexOf("?");
+            if (indexOfQuestion > -1) {
+                basePath = basePath.substr(0, indexOfQuestion);
+            }
+            indexOfAmpersand = basePath.indexOf("&");
+            if (indexOfAmpersand > -1) {
+                basePath = basePath.substr(0, indexOfAmpersand);
+            }
+        }
+        pathnames = basePath.split("/");
         pathnames.pop();
         return pathnames.join("/") + "/" + path;
     },
