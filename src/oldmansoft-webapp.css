@@ -90,6 +90,7 @@
     width: 12px;
     background-color: darkgray;
     opacity: 0.5;
+    z-index: 1;
 }
 .scrollbar-track:hover {
     opacity: 0.9;
