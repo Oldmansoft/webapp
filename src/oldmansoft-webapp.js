@@ -1,5 +1,5 @@
 ﻿/*
-* v0.6.33
+* v0.6.34
 * https://github.com/Oldmansoft/webapp
 * Copyright 2016 Oldmansoft, Inc; http://www.apache.org/licenses/LICENSE-2.0
 */
@@ -470,6 +470,11 @@
             element.stop(true);
             element.fadeOut(200, function () {
                 bodyManagement.shrink();
+                if (current == null) {
+                    if (fn) fn();
+                    return;
+                }
+
                 if (current.close) current.close();
                 current.node.remove();
 
