@@ -1,5 +1,5 @@
 ﻿/*
-* v0.6.34
+* v0.6.35
 * https://github.com/Oldmansoft/webapp
 * Copyright 2016 Oldmansoft, Inc; http://www.apache.org/licenses/LICENSE-2.0
 */
@@ -543,18 +543,9 @@
     _windowBox = new box("window-background");
 
     this.dialog = new function () {
-        function setButton(node) {
-            this.set = function (text, fn) {
-                var button = $("<button></button>").text(text);
-                button.click(function (event) {
-                    _messageBox.close(event, fn);
-                });
-                node.append(button);
-                return this;
-            }
-        }
         function elementBuilder() {
             var element = $("<div></div>").addClass("dialog-box").addClass("box-panel");
+            
             this.setHead = function (title) {
                 var header = $("<div></div>").addClass("dialog-header");
                 header.append($("<h4></h4>").text(title));
@@ -566,8 +557,27 @@
             }
             this.setFooter = function (fnConfirm, fnCancel) {
                 var footer = $("<div></div>").addClass("dialog-footer");
+
+                function option(node) {
+                    this.set = function (text) {
+                        var closeCallback,
+                            button = $("<button></button>").text(text);
+
+                        button.click(function (event) {
+                            _messageBox.close(event, function () {
+                                if (closeCallback) closeCallback();
+                            });
+                        });
+                        node.append(button);
+                        return new function () {
+                            this.setCallback = function (fn) {
+                                closeCallback = fn;
+                            }
+                        }
+                    }
+                }
                 element.append(footer);
-                return new setButton(footer);
+                return new option(footer);
             }
             this.get = function (type) {
                 element.data("type", type);
@@ -578,7 +588,15 @@
             }
         }
         this.alert = function (content, title, fn) {
-            var builder = new elementBuilder();
+            var confirmButton,
+                builder = new elementBuilder();
+
+            function option(button) {
+                this.onConfirm = function (fn) {
+                    button.setCallback(fn);
+                    return this;
+                }
+            }
             if (typeof title == "function") {
                 fn = title;
                 title = null;
@@ -587,11 +605,30 @@
                 builder.setHead(title);
             }
             builder.setBody(content);
-            builder.setFooter().set(_text.confirm, fn);
+            confirmButton = builder.setFooter().set(_text.confirm);
+            if (fn) {
+                console.warn("fn is obsolete.");
+                confirmButton.setCallback(fn);
+            }
             _messageBox.open(builder.get("alert"));
+            return new option(confirmButton);
         }
         this.confirm = function (content, title, fnConfirm, fnCancel) {
-            var builder = new elementBuilder();
+            var confirmButton,
+                cancelButton,
+                footer,
+                builder = new elementBuilder();
+
+            function option(confirmButton, cancelButton) {
+                this.onConfirm = function (fn) {
+                    confirmButton.setCallback(fn);
+                    return this;
+                }
+                this.onCancel = function (fn) {
+                    cancelButton.setCallback(fn);
+                    return this;
+                }
+            }
             if (typeof title == "function") {
                 fnCancel = fnConfirm;
                 fnConfirm = title;
@@ -601,8 +638,19 @@
                 builder.setHead(title);
             }
             builder.setBody(content);
-            builder.setFooter().set(_text.confirm, fnConfirm).set(_text.cancel, fnCancel);
+            footer = builder.setFooter();
+            confirmButton = footer.set(_text.confirm, fnConfirm);
+            if (fnConfirm) {
+                console.warn("fnConfirm is obsolete.");
+                confirmButton.setCallback(fnConfirm);
+            }
+            cancelButton = footer.set(_text.cancel, fnCancel);
+            if (fnCancel) {
+                console.warn("fnCancel is obsolete.");
+                cancelButton.setCallback(fnCancel);
+            }
             _messageBox.open(builder.get("confirm"));
+            return new option(confirmButton, cancelButton);
         }
         this.message = function (content) {
             var builder = new elementBuilder();
