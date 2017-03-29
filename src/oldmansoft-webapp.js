@@ -1,5 +1,5 @@
 ﻿/*
-* v0.6.35
+* v0.6.36
 * https://github.com/Oldmansoft/webapp
 * Copyright 2016 Oldmansoft, Inc; http://www.apache.org/licenses/LICENSE-2.0
 */
@@ -212,7 +212,7 @@
                 }
             }
             target.scrollTop(targetScrollTop - delta);
-            setArrowPosition()
+            setArrowPosition();
             return false;
         }
 
@@ -256,6 +256,7 @@
             arrowHeight = track.height() * targetHelper.viewHeight() / targetHelper.contentHeight();
             if (arrowHeight < 20) arrowHeight = 20;
             arrow.height(arrowHeight);
+            setArrowPosition();
         }
 
         target = $(target);
@@ -310,6 +311,7 @@
         }
         if (!_canTouch && _isReplacePCScrollBar) {
             _WindowScrollBar = new scrollbar("body");
+            setInterval(_WindowScrollBar.reset, 500);
         }
     }
 
@@ -1125,49 +1127,49 @@
         if (typeof fn == "function") fn(_text);
     }
 
-    function initOption(main) {
-        this.viewNode = function (node) {
-            if (!node) return main.getElement();
-            main.setElement(node);
-            return this;
-        }
-        this.defaultLink = function (link) {
-            if (!link) return main.getDefaultLink();
-            main.setDefaultLink(link);
-            return this;
-        }
-        this.unauthorized = function (fn) {
-            _fnOnUnauthorized = fn;
-            return this;
-        }
-        this.dealLinkEmptyTarget = function (b) {
-            if (b == undefined) return _isDealLinkEmptyTarget;
-            _isDealLinkEmptyTarget = b;
-            return this;
-        }
-        this.replacePCScrollBar = function (b) {
-            _isReplacePCScrollBar = b;
-            return this;
-        }
-        this.viewLoaded = function (fn) {
-            _globalViewEvent.load = fn;
-            return this;
-        }
-        this.viewActived = function (fn) {
-            _globalViewEvent.active = fn;
-            return this;
-        }
-        this.viewInactived = function (fn) {
-            _globalViewEvent.inactive = fn;
-            return this;
-        }
-        this.viewUnloaded = function (fn) {
-            _globalViewEvent.unload = fn;
-            return this;
-        }
-    }
-
     this.init = function (viewNode, defaultLink) {
+        function option(main) {
+            this.viewNode = function (node) {
+                if (!node) return main.getElement();
+                main.setElement(node);
+                return this;
+            }
+            this.defaultLink = function (link) {
+                if (!link) return main.getDefaultLink();
+                main.setDefaultLink(link);
+                return this;
+            }
+            this.unauthorized = function (fn) {
+                _fnOnUnauthorized = fn;
+                return this;
+            }
+            this.dealLinkEmptyTarget = function (b) {
+                if (b == undefined) return _isDealLinkEmptyTarget;
+                _isDealLinkEmptyTarget = b;
+                return this;
+            }
+            this.replacePCScrollBar = function (b) {
+                _isReplacePCScrollBar = b;
+                return this;
+            }
+            this.viewLoaded = function (fn) {
+                _globalViewEvent.load = fn;
+                return this;
+            }
+            this.viewActived = function (fn) {
+                _globalViewEvent.active = fn;
+                return this;
+            }
+            this.viewInactived = function (fn) {
+                _globalViewEvent.inactive = fn;
+                return this;
+            }
+            this.viewUnloaded = function (fn) {
+                _globalViewEvent.unload = fn;
+                return this;
+            }
+        }
+
         if (!!window.ActiveXObject || "ActiveXObject" in window) {
             $.ajaxSetup({ cache: false });
         }
@@ -1209,7 +1211,7 @@
         linker._init(function (link) {
             _mainView.load(link);
         });
-        return new initOption(_mainView);
+        return new option(_mainView);
     }
 
     window.$app = {
