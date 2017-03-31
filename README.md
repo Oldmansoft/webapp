@@ -112,7 +112,7 @@ option.viewUnloaded(function (view, unloadReturn) {
 #### _open
 打开新的窗体视图。
 ```html
-<a href="/path" target="_open">open</a>
+<a href="/path" target="_open" data-data="key=value">open</a>
 ```
 
 ### 功能样式
@@ -136,16 +136,15 @@ option.viewUnloaded(function (view, unloadReturn) {
 #### 警告框
 替换 window.alert，支持标题和确认回调。
 ```js
-$app.alert("text", function () { alert("other"); });
-$app.alert("text", "title", function () { alert("other"); });
+$app.alert("text").onConfirm(function () { alert("confirm"); });
+$app.alert("text", "title").onConfirm(function () { alert("confirm"); });
 ```
 
 #### 确认框
 支持标题，确认回调和取消回调。
 ```js
-$app.confirm("text", function () { alert("confirm"); });
-$app.confirm("text", function () { alert("confirm"); }, function () { alert("cancel"); });
-$app.confirm("text", "title", function () { alert("confirm"); }, function () { alert("cancel"); });
+$app.confirm("text").onConfirm(function () { alert("confirm"); }).onCancel(function () { alert("cancel"); });
+$app.confirm("text", "title").onConfirm(function () { alert("confirm"); }).onCancel(function () { alert("cancel"); });
 ```
 
 #### 消息框
@@ -217,6 +216,7 @@ $app.reload();
 相当于链接的目标 _open。
 ```js
 $app.open("/path");
+$app.open("/path", { key: value});
 ```
 
 ##### 关闭或返回地址

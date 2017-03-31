@@ -1,5 +1,5 @@
 ﻿/*
-* v0.7.38
+* v0.7.39
 * https://github.com/Oldmansoft/webapp
 * Copyright 2016 Oldmansoft, Inc; http://www.apache.org/licenses/LICENSE-2.0
 */
@@ -812,11 +812,12 @@
             lastNode.callLoadAndActive();
         }
 
-        this.load = function (link) {
+        this.load = function (link, data) {
             var loading = loadingTip.show();
             $.ajax({
                 mimeType: 'text/html; charset=utf-8',
                 url: getAbsolutePath(link, getPathHasAbsolutePathFromArray(links.getLinks(), links.count() - 2, _mainView.getDefaultLink()), _mainView.getDefaultLink()),
+                data: data,
                 type: 'GET',
                 timeout: _setting.timeover
             }).done(function (data, textStatus, jqXHR) {
@@ -1109,13 +1110,13 @@
         _same: function (href) {
             linker.sameHash(href);
         },
-        _open: function (href) {
-            open(href);
+        _open: function (href, target) {
+            open(href, target.attr("data-data"));
         }
     }
 
-    this.open = function (href) {
-        _openView.load(href)
+    this.open = function (href, data) {
+        _openView.load(href, data);
     }
 
     this.configSetting = function (fn) {
@@ -1190,7 +1191,7 @@
 
             if (_dealHrefTarget[target]) {
                 e.preventDefault();
-                _dealHrefTarget[target](href);
+                _dealHrefTarget[target](href, $(this));
             }
         });
         $(document).on("click", ".webapp-close", function (e) {
