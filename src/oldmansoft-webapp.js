@@ -1,5 +1,5 @@
 ﻿/*
-* v0.6.36
+* v0.7.38
 * https://github.com/Oldmansoft/webapp
 * Copyright 2016 Oldmansoft, Inc; http://www.apache.org/licenses/LICENSE-2.0
 */
@@ -32,11 +32,11 @@
     _messageBox,
     _windowBox;
     
-    function getAbsolutePath(path, basePath, defaultLink) {
+    function getAbsolutePath(path, basePath, fullLink) {
         var indexOfAmpersand,
             indexOfQuestion,
             pathnames;
-        if (path == "") path = defaultLink;
+        if (path == "") path = fullLink;
         indexOfAmpersand = path.indexOf("&");
         if (indexOfAmpersand > -1) {
             indexOfQuestion = path.indexOf("?");
@@ -64,9 +64,9 @@
         return pathnames.join("/") + "/" + path;
     }
 
-    function getPathHasAbsolutePathFromArray(array, index, defaultLink) {
+    function getPathHasAbsolutePathFromArray(array, index, fullLink) {
         for (var i = index; i > -1; i--) {
-            if (array[i] == "" && defaultLink.substr(0, 1) == "/") return defaultLink;
+            if (array[i] == "" && fullLink.substr(0, 1) == "/") return fullLink;
             if (array[i].substr(0, 1) == "/") return array[i];
         }
         return null;
@@ -162,10 +162,10 @@
                 return true;
             }
             this.bindMouseWheel = function () {
-                $(window).bind("mousewheel", targetMouseWheel);
+                $(window).on("mousewheel", targetMouseWheel);
             }
             this.unbindMouseWheel = function () {
-                $(window).unbind("mousewheel", targetMouseWheel);
+                $(window).off("mousewheel", targetMouseWheel);
             }
         }
 
@@ -187,10 +187,10 @@
                 return false;
             }
             this.bindMouseWheel = function () {
-                $t.bind("mousewheel", targetMouseWheel);
+                $t.on("mousewheel", targetMouseWheel);
             }
             this.unbindMouseWheel = function () {
-                $t.unbind("mousewheel", targetMouseWheel);
+                $t.off("mousewheel", targetMouseWheel);
             }
         }
 
@@ -219,9 +219,9 @@
         function arrowMouseDown(e) {
             downMouseY = e.clientY;
             downTargetTop = target.scrollTop();
-            html.bind("selectstart", htmlSelectStart);
-            html.bind("mousemove", htmlMouseMove);
-            html.bind("mouseup", htmlMouseUp);
+            html.on("selectstart", htmlSelectStart);
+            html.on("mousemove", htmlMouseMove);
+            html.on("mouseup", htmlMouseUp);
         }
 
         function htmlSelectStart() {
@@ -229,9 +229,9 @@
         }
 
         function htmlMouseUp() {
-            html.unbind("selectstart", htmlSelectStart);
-            html.unbind("mousemove", htmlMouseMove);
-            html.unbind("mouseup", htmlMouseUp);
+            html.off("selectstart", htmlSelectStart);
+            html.off("mousemove", htmlMouseMove);
+            html.off("mouseup", htmlMouseUp);
         }
 
         function htmlMouseMove(e) {
@@ -275,7 +275,7 @@
         _scrollbar.push(this);
         track.mousedown(arrowMouseDown);
         arrow.mousedown(arrowMouseDown);
-        $(window).bind("resize", reset);
+        $(window).on("resize", reset);
         targetHelper.bindMouseWheel();
 
         this.show = function () {
@@ -779,9 +779,8 @@
         }
     }
 
-    function openArea(link) {
-        var defaultLink = link,
-            links = new linkManagement();
+    function openArea() {
+        var links = new linkManagement();
 
         function setView(link, first, second) {
             var view,
@@ -817,7 +816,7 @@
             var loading = loadingTip.show();
             $.ajax({
                 mimeType: 'text/html; charset=utf-8',
-                url: getAbsolutePath(link, getPathHasAbsolutePathFromArray(links.getLinks(), links.count() - 2, defaultLink), defaultLink),
+                url: getAbsolutePath(link, getPathHasAbsolutePathFromArray(links.getLinks(), links.count() - 2, _mainView.getDefaultLink()), _mainView.getDefaultLink()),
                 type: 'GET',
                 timeout: _setting.timeover
             }).done(function (data, textStatus, jqXHR) {
@@ -1173,7 +1172,7 @@
         if (!!window.ActiveXObject || "ActiveXObject" in window) {
             $.ajaxSetup({ cache: false });
         }
-        $("body").on("click", "a", function (e) {
+        $(document).on("click", "a", function (e) {
             var target = $(this).attr("target"),
                 href = $(this).attr('href');
 
@@ -1181,13 +1180,7 @@
                 e.preventDefault();
                 return;
             }
-
-            if ($(this).hasClass("webapp-close")) {
-                e.preventDefault();
-                viewClose();
-                return;
-            }
-
+            
             if (!target) {
                 if (!_isDealLinkEmptyTarget) return;
                 e.preventDefault();
@@ -1200,13 +1193,17 @@
                 _dealHrefTarget[target](href);
             }
         });
-        $(window).bind("scroll", dealScrollToVisibleLoading);
-        $(window).bind("resize", dealScrollToVisibleLoading);
-        $(document).bind("touchmove", dealTouchMove);
+        $(document).on("click", ".webapp-close", function (e) {
+            e.preventDefault();
+            viewClose();
+        });
+        $(window).on("scroll", dealScrollToVisibleLoading);
+        $(window).on("resize", dealScrollToVisibleLoading);
+        $(document).on("touchmove", dealTouchMove);
 
         _globalViewEvent = new viewEvent();
         _mainView = new viewArea(viewNode, defaultLink);
-        _openView = new openArea(defaultLink);
+        _openView = new openArea();
         _activeView = _mainView;
         linker._init(function (link) {
             _mainView.load(link);
