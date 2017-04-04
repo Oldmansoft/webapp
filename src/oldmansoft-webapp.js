@@ -1,5 +1,5 @@
 ﻿/*
-* v0.8.40
+* v0.8.41
 * https://github.com/Oldmansoft/webapp
 * Copyright 2016 Oldmansoft, Inc; http://www.apache.org/licenses/LICENSE-2.0
 */
@@ -8,7 +8,9 @@
     window.oldmansoft.webapp = this;
 
     var _setting = {
-        timeover: 180000
+        timeover: 180000,
+        loading_show_time: 1000,
+        loading_hide_time: 200
     },
     _text = {
         ok: "Ok",
@@ -702,7 +704,7 @@
             initElement();
             bodyManagement.expand();
             element.stop(true, true);
-            element.fadeIn(2000);
+            element.fadeIn(_setting.loading_show_time);
             return new function () {
                 this.hide = function () {
                     loadingTip.hide();
@@ -712,7 +714,7 @@
         this.hide = function () {
             initElement();
             element.stop(true);
-            element.fadeOut(200, function () {
+            element.fadeOut(_setting.loading_hide_time, function () {
                 bodyManagement.shrink();
             });
         }
