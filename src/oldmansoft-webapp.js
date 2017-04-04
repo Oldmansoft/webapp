@@ -1,13 +1,12 @@
 ﻿/*
-* v0.9.43
+* v0.9.44
 * https://github.com/Oldmansoft/webapp
 * Copyright 2016 Oldmansoft, Inc; http://www.apache.org/licenses/LICENSE-2.0
 */
-(function () {
-    if (!window.oldmansoft) window.oldmansoft = {};
-    window.oldmansoft.webapp = this;
-
-    var _setting = {
+if (!window.oldmansoft) window.oldmansoft = {};
+window.oldmansoft.webapp = new (function () {
+    var self = this,
+    _setting = {
         timeover: 180000,
         loading_show_time: 1000,
         loading_hide_time: 200
@@ -313,7 +312,7 @@
             _canTouch = "ontouchmove" in document;
         }
         if (!_canTouch && _isReplacePCScrollBar) {
-            _WindowScrollBar = new scrollbar("body");
+            _WindowScrollBar = new self.scrollbar("body");
             setInterval(_WindowScrollBar.reset, 500);
         }
     }
@@ -474,7 +473,7 @@
 
             element.stop(true);
             element.fadeOut(200, function () {
-                bodyManagement.shrink();
+                self.bodyManagement.shrink();
                 if (current == null) {
                     if (fn) fn();
                     return;
@@ -518,7 +517,7 @@
                 }
                 store.push({ node: current.node.detach(), close: current.close });
             }
-            bodyManagement.expand();
+            self.bodyManagement.expand();
             current = { node: node, close: fnClose };
             core.append(node);
             element.stop(true, true);
@@ -544,8 +543,8 @@
         }
     }
 
-    _messageBox = new box("dialog-background", true);
-    _windowBox = new box("window-background");
+    _messageBox = new self.box("dialog-background", true);
+    _windowBox = new self.box("window-background");
 
     this.dialog = new function () {
         function elementBuilder() {
@@ -702,12 +701,12 @@
         }
         this.show = function () {
             initElement();
-            bodyManagement.expand();
+            self.bodyManagement.expand();
             element.stop(true, true);
             element.fadeIn(_setting.loading_show_time);
             return new function () {
                 this.hide = function () {
-                    loadingTip.hide();
+                    self.loadingTip.hide();
                 }
             }
         }
@@ -715,7 +714,7 @@
             initElement();
             element.stop(true);
             element.fadeOut(_setting.loading_hide_time, function () {
-                bodyManagement.shrink();
+                self.bodyManagement.shrink();
             });
         }
     }
@@ -831,7 +830,7 @@
         }
 
         this.load = function (link, data, type) {
-            var loading = loadingTip.show();
+            var loading = self.loadingTip.show();
             $.ajax({
                 mimeType: 'text/html; charset=utf-8',
                 url: getAbsolutePath(link, getPathHasAbsolutePathFromArray(links.getLinks(), links.count() - 2, _mainView.getDefaultLink()), _mainView.getDefaultLink()),
@@ -919,16 +918,16 @@
 
             event = _currentViewEvent;
             links.setLastContext(view, event, "main", links.count()).callLoadAndActive();
-            resetWindowScrollbar();
+            self.resetWindowScrollbar();
             $(window).scrollTop(0);
-            dealScrollToVisibleLoading();
+            self.dealScrollToVisibleLoading();
         }
 
         function loadContent(link, basePath, onloadBefore) {
             var currentId = ++loadId,
                 loading;
 
-            loading = loadingTip.show();
+            loading = self.loadingTip.show();
             $.ajax({
                 mimeType: 'text/html; charset=utf-8',
                 url: getAbsolutePath(link, basePath, defaultLink),
@@ -996,7 +995,7 @@
                     }
                 }
                 links.get(hrefs.length - 1).show();
-                resetWindowScrollbar();
+                self.resetWindowScrollbar();
                 return;
             }
 
@@ -1024,7 +1023,7 @@
 
         this.close = function () {
             if (links.count() > 1) {
-                linker.hash(links.getBackLink());
+                self.linker.hash(links.getBackLink());
             }
         }
 
@@ -1092,8 +1091,8 @@
             $.get(src, function (data) {
                 loading.before(data);
                 loading.remove();
-                resetWindowScrollbar();
-                dealScrollToVisibleLoading();
+                self.resetWindowScrollbar();
+                self.dealScrollToVisibleLoading();
             });
         }
     }
@@ -1120,16 +1119,16 @@
 
     _dealHrefTarget = {
         _base: function (href) {
-            linker.hash(href);
+            self.linker.hash(href);
         },
         _add: function (href) {
-            linker.addHash(href);
+            self.linker.addHash(href);
         },
         _same: function (href) {
-            linker.sameHash(href);
+            self.linker.sameHash(href);
         },
         _open: function (href, target) {
-            open(href, target.attr("data-data"));
+            self.open(href, target.attr("data-data"));
         }
     }
 
@@ -1218,38 +1217,38 @@
         });
         $(document).on("click", ".webapp-close", function (e) {
             e.preventDefault();
-            viewClose();
+            self.viewClose();
         });
-        $(window).on("scroll", dealScrollToVisibleLoading);
-        $(window).on("resize", dealScrollToVisibleLoading);
+        $(window).on("scroll", self.dealScrollToVisibleLoading);
+        $(window).on("resize", self.dealScrollToVisibleLoading);
         $(document).on("touchmove", dealTouchMove);
 
         _globalViewEvent = new viewEvent();
         _mainView = new viewArea(viewNode, defaultLink);
         _openView = new openArea();
         _activeView = _mainView;
-        linker._init(function (link) {
+        self.linker._init(function (link) {
             _mainView.load(link);
         });
         return new option(_mainView);
     }
 
     window.$app = {
-        configSetting: configSetting,
-        configText: configText,
-        alert: dialog.alert,
-        confirm: dialog.confirm,
-        message: dialog.message,
-        loading: loadingTip.show,
-        loadScript: scriptLoader.load,
-        hash: linker.hash,
-        baseHash: linker.hash,
-        addHash: linker.addHash,
-        sameHash: linker.sameHash,
-        reload: linker.refresh,
-        open: open,
-        event: event,
-        close: viewClose,
-        init: init
+        configSetting: self.configSetting,
+        configText: self.configText,
+        alert: self.dialog.alert,
+        confirm: self.dialog.confirm,
+        message: self.dialog.message,
+        loading: self.loadingTip.show,
+        loadScript: self.scriptLoader.load,
+        hash: self.linker.hash,
+        baseHash: self.linker.hash,
+        addHash: self.linker.addHash,
+        sameHash: self.linker.sameHash,
+        reload: self.linker.refresh,
+        open: self.open,
+        event: self.event,
+        close: self.viewClose,
+        init: self.init
     };
 })();
