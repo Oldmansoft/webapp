@@ -113,7 +113,7 @@ option.viewUnloaded(function (view, unloadReturn) {
 ```
 
 #### _open
-打开新的窗体视图。
+打开新的窗体视图。当指定 data-data 的属性内容时，会使用 post 方式传递内容。
 ```html
 <a href="/path" target="_open" data-data="key=value">open</a>
 ```
@@ -216,7 +216,7 @@ $app.reload();
 ```
 
 ##### 打开新的窗体视图
-相当于链接的目标 _open。
+相当于链接的目标 _open。当指定第二个参数 data 时，会使用 post 的方式提交数据。
 ```js
 $app.open("/path");
 $app.open("/path", { key: value});

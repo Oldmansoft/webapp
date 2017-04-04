@@ -1,5 +1,5 @@
 ﻿/*
-* v0.8.42
+* v0.9.43
 * https://github.com/Oldmansoft/webapp
 * Copyright 2016 Oldmansoft, Inc; http://www.apache.org/licenses/LICENSE-2.0
 */
@@ -1129,22 +1129,16 @@
             linker.sameHash(href);
         },
         _open: function (href, target) {
-            var data = target.attr("data-data");
-            if (target.attr("data-method") == "post") {
-                openByPost(href, data);
-            }
-            else {
-                open(href, data);
-            }
+            open(href, target.attr("data-data"));
         }
     }
 
     this.open = function (href, data) {
-        _openView.load(href, data, 'GET');
-    }
-
-    this.openByPost = function (href, data) {
-        _openView.load(href, data, 'POST');
+        if (data) {
+            _openView.load(href, data, 'POST');
+        } else {
+            _openView.load(href, data, 'GET');
+        }
     }
 
     this.configSetting = function (fn) {
