@@ -26,6 +26,8 @@ $app.configText(function (text) {
 ```js
 $app.configSetting(function (setting) {
     setting.timeover = 180000;
+    setting.loading_show_time = 200;
+    setting.loading_hide_time = 100;
 });
 
 ```
