@@ -1,5 +1,5 @@
 ﻿/*
-* v0.7.39
+* v0.8.40
 * https://github.com/Oldmansoft/webapp
 * Copyright 2016 Oldmansoft, Inc; http://www.apache.org/licenses/LICENSE-2.0
 */
@@ -11,8 +11,9 @@
         timeover: 180000
     },
     _text = {
-        confirm: "Cofirm",
-        cancel: "Cancel",
+        ok: "Ok",
+        yes: "Yes",
+        no: "No",
         loading: "Loading"
     },
     _mainView = null,
@@ -557,7 +558,7 @@
                 var body = $("<div></div>").addClass("dialog-body").text(text);;
                 element.append(body);
             }
-            this.setFooter = function (fnConfirm, fnCancel) {
+            this.setFooter = function () {
                 var footer = $("<div></div>").addClass("dialog-footer");
 
                 function option(node) {
@@ -590,11 +591,16 @@
             }
         }
         this.alert = function (content, title, fn) {
-            var confirmButton,
+            var okButton,
                 builder = new elementBuilder();
 
             function option(button) {
                 this.onConfirm = function (fn) {
+                    console.warn("onConfirm is obsolete. commend use ok");
+                    button.setCallback(fn);
+                    return this;
+                }
+                this.ok = function (fn) {
                     button.setCallback(fn);
                     return this;
                 }
@@ -607,33 +613,43 @@
                 builder.setHead(title);
             }
             builder.setBody(content);
-            confirmButton = builder.setFooter().set(_text.confirm);
+            okButton = builder.setFooter().set(_text.ok);
             if (fn) {
-                console.warn("fn is obsolete.");
-                confirmButton.setCallback(fn);
+                console.warn("fn is obsolete. commend use ok");
+                okButton.setCallback(fn);
             }
             _messageBox.open(builder.get("alert"));
-            return new option(confirmButton);
+            return new option(okButton);
         }
-        this.confirm = function (content, title, fnConfirm, fnCancel) {
-            var confirmButton,
-                cancelButton,
+        this.confirm = function (content, title, fnYes, fnNo) {
+            var yesButton,
+                noButton,
                 footer,
                 builder = new elementBuilder();
 
-            function option(confirmButton, cancelButton) {
+            function option(yesButton, noButton) {
                 this.onConfirm = function (fn) {
-                    confirmButton.setCallback(fn);
+                    console.warn("onConfirm is obsolete. commend use yes");
+                    yesButton.setCallback(fn);
+                    return this;
+                }
+                this.yes = function (fn) {
+                    yesButton.setCallback(fn);
                     return this;
                 }
                 this.onCancel = function (fn) {
-                    cancelButton.setCallback(fn);
+                    console.warn("onCancel is obsolete. commend use no");
+                    noButton.setCallback(fn);
+                    return this;
+                }
+                this.no = function (fn) {
+                    noButton.setCallback(fn);
                     return this;
                 }
             }
             if (typeof title == "function") {
-                fnCancel = fnConfirm;
-                fnConfirm = title;
+                fnNo = fnYes;
+                fnYes = title;
                 title = null;
             }
             if (title) {
@@ -641,18 +657,18 @@
             }
             builder.setBody(content);
             footer = builder.setFooter();
-            confirmButton = footer.set(_text.confirm, fnConfirm);
-            if (fnConfirm) {
-                console.warn("fnConfirm is obsolete.");
-                confirmButton.setCallback(fnConfirm);
+            yesButton = footer.set(_text.yes, fnYes);
+            if (fnYes) {
+                console.warn("fnYes is obsolete.");
+                yesButton.setCallback(fnYes);
             }
-            cancelButton = footer.set(_text.cancel, fnCancel);
-            if (fnCancel) {
-                console.warn("fnCancel is obsolete.");
-                cancelButton.setCallback(fnCancel);
+            noButton = footer.set(_text.no, fnNo);
+            if (fnNo) {
+                console.warn("fnNo is obsolete.");
+                noButton.setCallback(fnNo);
             }
             _messageBox.open(builder.get("confirm"));
-            return new option(confirmButton, cancelButton);
+            return new option(yesButton, noButton);
         }
         this.message = function (content) {
             var builder = new elementBuilder();

@@ -15,8 +15,9 @@ Single Page Application (单页应用) 前端页面控制程序。
 配置文字提示，默认是英文。
 ```js
 $app.configText(function (text) {
-    text.confirm = "确定";
-    text.cancel = "取消";
+    text.ok = "好的";
+    text.yes = "是";
+    text.no = "否";
     text.loading = "加载中";
 });
 ```
@@ -134,17 +135,17 @@ option.viewUnloaded(function (view, unloadReturn) {
 不需要初始化可以使用的功能。
 
 #### 警告框
-替换 window.alert，支持标题和确认回调。
+替换 window.alert，支持标题和按钮回调。
 ```js
-$app.alert("text").onConfirm(function () { alert("confirm"); });
-$app.alert("text", "title").onConfirm(function () { alert("confirm"); });
+$app.alert("text").ok(function () { alert("ok"); });
+$app.alert("text", "title").ok(function () { alert("ok"); });
 ```
 
 #### 确认框
-支持标题，确认回调和取消回调。
+支持标题，按钮回调。
 ```js
-$app.confirm("text").onConfirm(function () { alert("confirm"); }).onCancel(function () { alert("cancel"); });
-$app.confirm("text", "title").onConfirm(function () { alert("confirm"); }).onCancel(function () { alert("cancel"); });
+$app.confirm("text").yes(function () { alert("yes"); }).no(function () { alert("no"); });
+$app.confirm("text", "title").yes(function () { alert("yes"); }).no(function () { alert("no"); });
 ```
 
 #### 消息框
