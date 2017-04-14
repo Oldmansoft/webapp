@@ -1,5 +1,5 @@
 ﻿/*
-* v0.9.44
+* v0.9.45
 * https://github.com/Oldmansoft/webapp
 * Copyright 2016 Oldmansoft, Inc; http://www.apache.org/licenses/LICENSE-2.0
 */
@@ -72,6 +72,25 @@ window.oldmansoft.webapp = new (function () {
             if (array[i].substr(0, 1) == "/") return array[i];
         }
         return null;
+    }
+
+    function isHtmlDocument(data) {
+        var spaceIndex,
+            char;
+
+        if (!data) return false;
+
+        for (spaceIndex = 0; spaceIndex < data.length; spaceIndex++) {
+            char = data.substr(spaceIndex, 1);
+            if (char == " ") continue;
+            if (char == "\r") continue;
+            if (char == "\n") continue;
+            if (char == "\t") continue;
+            break;
+        }
+        if (data.substr(spaceIndex, 15) == "<!DOCTYPE html>") return true;
+        if (data.substr(spaceIndex, 5) == "<html") return true;
+        return false;
     }
 
     this.scriptLoader = new function () {
@@ -830,10 +849,13 @@ window.oldmansoft.webapp = new (function () {
         }
 
         this.load = function (link, data, type) {
-            var loading = self.loadingTip.show();
+            var loading = self.loadingTip.show(),
+                loadPath;
+
+            loadPath = getAbsolutePath(link, getPathHasAbsolutePathFromArray(links.getLinks(), links.count() - 2, _mainView.getDefaultLink()), _mainView.getDefaultLink());
             $.ajax({
                 mimeType: 'text/html; charset=utf-8',
-                url: getAbsolutePath(link, getPathHasAbsolutePathFromArray(links.getLinks(), links.count() - 2, _mainView.getDefaultLink()), _mainView.getDefaultLink()),
+                url: loadPath,
                 data: data,
                 type: type,
                 timeout: _setting.timeover
@@ -852,6 +874,11 @@ window.oldmansoft.webapp = new (function () {
                             }
                         }
                     }
+                }
+
+                if (isHtmlDocument(data)) {
+                    alert("You try to load wrong content: " + loadPath);
+                    return;
                 }
 
                 setView(link, data);
@@ -925,12 +952,14 @@ window.oldmansoft.webapp = new (function () {
 
         function loadContent(link, basePath, onloadBefore) {
             var currentId = ++loadId,
-                loading;
+                loading,
+                loadPath;
 
             loading = self.loadingTip.show();
+            loadPath = getAbsolutePath(link, basePath, defaultLink);
             $.ajax({
                 mimeType: 'text/html; charset=utf-8',
-                url: getAbsolutePath(link, basePath, defaultLink),
+                url: loadPath,
                 type: 'GET',
                 timeout: _setting.timeover
             }).done(function (data, textStatus, jqXHR) {
@@ -954,6 +983,10 @@ window.oldmansoft.webapp = new (function () {
                     }
                 }
 
+                if (isHtmlDocument(data)) {
+                    alert("You try to load wrong content: " + loadPath);
+                    return;
+                }
                 setView(link, onloadBefore, data);
             }).fail(function (jqXHR, textStatus, errorThrown) {
                 if (currentId != loadId) {
