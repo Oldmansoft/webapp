@@ -1,5 +1,5 @@
 ﻿/*
-* v0.9.46
+* v0.9.47
 * https://github.com/Oldmansoft/webapp
 * Copyright 2016 Oldmansoft, Inc; http://www.apache.org/licenses/LICENSE-2.0
 */
@@ -176,7 +176,6 @@ window.oldmansoft.webapp = new (function () {
             }
             this.setTrackPosition = function (track) {
                 if (isSetTrackPosition) return true;
-                track.css("position", "fixed");
                 track.css("right", 0);
                 track.css("top", 0);
                 isSetTrackPosition = true;
@@ -236,6 +235,10 @@ window.oldmansoft.webapp = new (function () {
             setArrowPosition();
             return false;
         }
+        
+        function htmlSelectStart() {
+            return false;
+        }
 
         function arrowMouseDown(e) {
             downMouseY = e.clientY;
@@ -243,16 +246,14 @@ window.oldmansoft.webapp = new (function () {
             html.on("selectstart", htmlSelectStart);
             html.on("mousemove", htmlMouseMove);
             html.on("mouseup", htmlMouseUp);
-        }
-
-        function htmlSelectStart() {
-            return false;
+            track.addClass("focus");
         }
 
         function htmlMouseUp() {
             html.off("selectstart", htmlSelectStart);
             html.off("mousemove", htmlMouseMove);
             html.off("mouseup", htmlMouseUp);
+            track.removeClass("focus");
         }
 
         function htmlMouseMove(e) {
@@ -295,7 +296,6 @@ window.oldmansoft.webapp = new (function () {
         reset();
         _scrollbar.push(this);
         track.mousedown(arrowMouseDown);
-        arrow.mousedown(arrowMouseDown);
         $(window).on("resize", reset);
         targetHelper.bindMouseWheel();
 
