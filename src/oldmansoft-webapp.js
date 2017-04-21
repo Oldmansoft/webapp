@@ -1,5 +1,5 @@
 ﻿/*
-* v0.9.47
+* v0.9.48
 * https://github.com/Oldmansoft/webapp
 * Copyright 2016 Oldmansoft, Inc; http://www.apache.org/licenses/LICENSE-2.0
 */
@@ -471,6 +471,17 @@ window.oldmansoft.webapp = new (function () {
             return link.join("#");
         }
 
+        this.getLink = function () {
+            var link = [],
+                i;
+
+            link.push("");
+            for (i = 0; i < context.length; i++) {
+                link.push(context[i].link);
+            }
+            return link.join("#");
+        }
+
         this.getLinks = function () {
             var result = [],
                 i;
@@ -742,7 +753,8 @@ window.oldmansoft.webapp = new (function () {
     this.linker = new function () {
         var initHashChange = false,
             lastHash = null,
-            changeCall = null;
+            changeCall = null,
+            isModify = false;
 
         function fixHref(href) {
             if (!href) return href;
@@ -761,9 +773,17 @@ window.oldmansoft.webapp = new (function () {
                 return;
             }
             lastHash = href;
+            if (isModify) {
+                isModify = false;
+                return;
+            }
             callLeave();
         }
 
+        this.modify = function (href) {
+            isModify = true;
+            window.location.hash = href;
+        }
         this.hash = function (href) {
             if (href == undefined) return window.location.hash;
 
@@ -1047,7 +1067,14 @@ window.oldmansoft.webapp = new (function () {
 
         this.close = function () {
             if (links.count() > 1) {
-                $this.linker.hash(links.getBackLink());
+                if (links.get(links.count() - 2).valid) {
+                    links.pop().remove();
+                    links.last().show();
+                    $this.resetWindowScrollbar();
+                    $this.linker.modify(links.getLink());
+                } else {
+                    $this.linker.hash(links.getBackLink());
+                }
             }
         }
 
