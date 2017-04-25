@@ -1,5 +1,5 @@
 ﻿/*
-* v0.9.48
+* v0.9.49
 * https://github.com/Oldmansoft/webapp
 * Copyright 2016 Oldmansoft, Inc; http://www.apache.org/licenses/LICENSE-2.0
 */
@@ -461,24 +461,15 @@ window.oldmansoft.webapp = new (function () {
         }
 
         this.getBackLink = function () {
-            var link = [],
-                i;
-
-            link.push("");
-            for (i = 0; i < context.length - 1; i++) {
-                link.push(context[i].link);
-            }
+            var link = this.getLinks().slice();
+            link.splice(0, 0, "");
+            link.splice(link.length - 1, 1);
             return link.join("#");
         }
 
         this.getLink = function () {
-            var link = [],
-                i;
-
-            link.push("");
-            for (i = 0; i < context.length; i++) {
-                link.push(context[i].link);
-            }
+            var link = this.getLinks().slice();
+            link.splice(0, 0, "");
             return link.join("#");
         }
 
@@ -761,11 +752,8 @@ window.oldmansoft.webapp = new (function () {
             if (href.substr(0, 1) == "#") return href.substr(1);
             return href;
         }
-        function getLink() {
-            return lastHash;
-        }
         function callLeave() {
-            changeCall(getLink());
+            changeCall(lastHash);
         }
         function hashChange() {
             var href = fixHref(window.location.hash);
@@ -1101,6 +1089,10 @@ window.oldmansoft.webapp = new (function () {
         this.inactiveCurrent = function () {
             links.last().inactiveEvent();
         }
+
+        this.getLinks = function () {
+            return links.getLinks();
+        }
     }
 
     this.event = function () {
@@ -1181,6 +1173,10 @@ window.oldmansoft.webapp = new (function () {
         _open: function (href, target) {
             $this.open(href, target.attr("data-data"));
         }
+    }
+
+    this.hashes = function () {
+        return _mainView.getLinks();
     }
 
     this.open = function (href, data) {
