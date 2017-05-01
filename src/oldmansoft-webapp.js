@@ -1,5 +1,5 @@
 ﻿/*
-* v0.9.49
+* v0.9.50
 * https://github.com/Oldmansoft/webapp
 * Copyright 2016 Oldmansoft, Inc; http://www.apache.org/licenses/LICENSE-2.0
 */
@@ -1170,9 +1170,13 @@ window.oldmansoft.webapp = new (function () {
         _same: function (href) {
             $this.linker.sameHash(href);
         },
-        _open: function (href, target) {
-            $this.open(href, target.attr("data-data"));
+        _open: function (href, caller) {
+            $this.open(href, caller.attr("data-data"));
         }
+    }
+    
+    this.configTarget = function (fn) {
+        if (typeof fn == "function") fn(_dealHrefTarget);
     }
 
     this.hashes = function () {
