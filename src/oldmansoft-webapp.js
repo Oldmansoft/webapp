@@ -1,5 +1,5 @@
 ﻿/*
-* v0.9.51
+* v0.9.52
 * https://github.com/Oldmansoft/webapp
 * Copyright 2016 Oldmansoft, Inc; http://www.apache.org/licenses/LICENSE-2.0
 */
@@ -494,7 +494,7 @@ window.oldmansoft.webapp = new (function () {
             if (event && event.target != event.currentTarget) return;
 
             element.stop(true);
-            element.fadeOut(200, function () {
+            element.fadeOut(store.length > 0 ? 0 : 200, function () {
                 $this.bodyManagement.shrink();
                 if (current == null) {
                     if (fn) fn();
@@ -509,7 +509,7 @@ window.oldmansoft.webapp = new (function () {
                     core.append(current.node);
                     if (fn) fn();
                     element.stop(true, true);
-                    element.fadeIn(200);
+                    element.fadeIn(0);
                     return;
                 }
 
