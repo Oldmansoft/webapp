@@ -1,5 +1,5 @@
 ﻿/*
-* v0.9.52
+* v0.10.53
 * https://github.com/Oldmansoft/webapp
 * Copyright 2016 Oldmansoft, Inc; http://www.apache.org/licenses/LICENSE-2.0
 */
@@ -357,7 +357,8 @@ window.oldmansoft.webapp = new (function () {
                 visible = true,
                 scrollTop = 0,
                 scrollLeft = 0,
-                localViewEvent;
+                localViewEvent,
+                option = { closed: null };
 
             this.link = link;
             this.node = $("<div></div>").addClass(name + "-view").data("link", link);
@@ -421,6 +422,10 @@ window.oldmansoft.webapp = new (function () {
 
                 localViewEvent = _currentViewEvent;
                 this.valid = true;
+            }
+
+            this.getOption = function () {
+                return option;
             }
         }
 
@@ -825,7 +830,8 @@ window.oldmansoft.webapp = new (function () {
     }
 
     function openArea() {
-        var links = new linkManagement();
+        var links = new linkManagement(),
+            loadOption = { closed: null };
 
         function setView(link, first, second) {
             var lastNode;
@@ -848,6 +854,7 @@ window.oldmansoft.webapp = new (function () {
                 lastNode.remove();
             });
             lastNode.callLoadAndActive();
+            lastNode.getOption().closed = loadOption.closed;
         }
 
         this.load = function (link, data, type) {
@@ -901,10 +908,12 @@ window.oldmansoft.webapp = new (function () {
 
                 setView(link, title, content);
             });
+            loadOption.closed = null;
+            return loadOption;
         }
 
-        this.close = function () {
-            links.pop();
+        this.close = function (parameter) {
+            var lastClosed = links.pop().getOption().closed;
             _windowBox.close(null, function () {
                 var current = links.last();
                 if (current) {
@@ -913,6 +922,7 @@ window.oldmansoft.webapp = new (function () {
                     _activeView = _mainView;
                     _mainView.activeCurrent();
                 }
+                if (lastClosed) lastClosed(parameter);
             });
         }
 
@@ -1133,8 +1143,8 @@ window.oldmansoft.webapp = new (function () {
         }
     }
 
-    this.viewClose = function () {
-        _activeView.close();
+    this.viewClose = function (parameter) {
+        _activeView.close(parameter);
     }
 
     this.dealScrollToVisibleLoading = function () {
@@ -1198,10 +1208,16 @@ window.oldmansoft.webapp = new (function () {
     }
 
     this.open = function (href, data) {
+        var option;
         if (data) {
-            _openView.load(href, data, 'POST');
+            option = _openView.load(href, data, 'POST');
         } else {
-            _openView.load(href, data, 'GET');
+            option = _openView.load(href, data, 'GET');
+        }
+        return new function () {
+            this.closed = function (fn) {
+                option.closed = fn;
+            }
         }
     }
 
@@ -1282,7 +1298,7 @@ window.oldmansoft.webapp = new (function () {
         });
         $(document).on("click", ".webapp-close", function (e) {
             e.preventDefault();
-            $this.viewClose();
+            $this.viewClose($(this).attr("data-close"));
         });
         $(window).on("scroll", $this.dealScrollToVisibleLoading);
         $(window).on("resize", $this.dealScrollToVisibleLoading);

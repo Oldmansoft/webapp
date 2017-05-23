@@ -239,3 +239,9 @@ loading.hide();
 ```js
 $app.loadScript("/path").done(function () { });
 ```
+
+##### 判断脚本加载后执行
+获取当前视图的结点。
+```js
+$app.current().node;
+```
