@@ -1,5 +1,5 @@
 ﻿/*
-* v0.10.53
+* v0.10.54
 * https://github.com/Oldmansoft/webapp
 * Copyright 2016 Oldmansoft, Inc; http://www.apache.org/licenses/LICENSE-2.0
 */
@@ -11,6 +11,7 @@ window.oldmansoft.webapp = new (function () {
         loading_show_time: 1000,
         loading_hide_time: 200
     },
+    _isIeCore = window.ActiveXObject ? true : false,
     _text = {
         ok: "Ok",
         yes: "Yes",
@@ -160,6 +161,20 @@ window.oldmansoft.webapp = new (function () {
             downMouseY,
             isShow = true;
 
+        function scrollTop(element, value) {
+            if (element.selector == "body" && _isIeCore) {
+                if (value)
+                    $(document).scrollTop(value);
+                else
+                    return $(document).scrollTop();
+            } else {
+                if (value)
+                    element.scrollTop(value);
+                else
+                    return element.scrollTop();
+            }
+        }
+
         function bodyTarget(dom) {
             var contentHeight,
                 viewHeight
@@ -215,13 +230,14 @@ window.oldmansoft.webapp = new (function () {
         }
 
         function setArrowPosition() {
-            arrow.css("top", (targetHelper.viewHeight() - arrowHeight) * target.scrollTop() / (targetHelper.contentHeight() - targetHelper.viewHeight()));
+            var height = (targetHelper.viewHeight() - arrowHeight) * scrollTop(target) / (targetHelper.contentHeight() - targetHelper.viewHeight());
+            arrow.css("top", height);
         }
 
         function targetMouseWheel(e) {
             if (targetHelper.contentHeight() <= targetHelper.viewHeight()) return true;
             var delta = e.originalEvent.wheelDelta,
-                targetScrollTop = target.scrollTop();
+                targetScrollTop = scrollTop(target);
             if (delta < 0) {
                 if (targetScrollTop >= (targetHelper.contentHeight() - targetHelper.viewHeight())) {
                     return true;
@@ -231,7 +247,7 @@ window.oldmansoft.webapp = new (function () {
                     return true;
                 }
             }
-            target.scrollTop(targetScrollTop - delta);
+            scrollTop(target, targetScrollTop - delta);
             setArrowPosition();
             return false;
         }
@@ -242,7 +258,7 @@ window.oldmansoft.webapp = new (function () {
 
         function arrowMouseDown(e) {
             downMouseY = e.clientY;
-            downTargetTop = target.scrollTop();
+            downTargetTop = scrollTop(target);
             html.on("selectstart", htmlSelectStart);
             html.on("mousemove", htmlMouseMove);
             html.on("mouseup", htmlMouseUp);
@@ -258,7 +274,7 @@ window.oldmansoft.webapp = new (function () {
 
         function htmlMouseMove(e) {
             var per = (targetHelper.contentHeight() - targetHelper.viewHeight()) / (targetHelper.viewHeight() - arrowHeight)
-            target.scrollTop(downTargetTop - (downMouseY - e.clientY) * per);
+            scrollTop(target, downTargetTop - (downMouseY - e.clientY) * per);
             setArrowPosition();
         }
 
