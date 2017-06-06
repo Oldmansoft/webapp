@@ -1,5 +1,5 @@
 ﻿/*
-* v0.10.54
+* v0.10.55
 * https://github.com/Oldmansoft/webapp
 * Copyright 2016 Oldmansoft, Inc; http://www.apache.org/licenses/LICENSE-2.0
 */
@@ -11,7 +11,7 @@ window.oldmansoft.webapp = new (function () {
         loading_show_time: 1000,
         loading_hide_time: 200
     },
-    _isIeCore = window.ActiveXObject ? true : false,
+    _isIeCore = "ActiveXObject" in window,
     _text = {
         ok: "Ok",
         yes: "Yes",
