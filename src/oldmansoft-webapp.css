@@ -17,6 +17,10 @@
     overflow: hidden;
 }
 
+.webapp-close {
+    cursor: pointer;
+}
+
 .box-background {
     position: fixed;
     width: 100%;
