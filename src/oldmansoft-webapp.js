@@ -1,5 +1,5 @@
 ﻿/*
-* v0.10.55
+* v0.11.56
 * https://github.com/Oldmansoft/webapp
 * Copyright 2016 Oldmansoft, Inc; http://www.apache.org/licenses/LICENSE-2.0
 */
@@ -396,11 +396,15 @@ window.oldmansoft.webapp = new (function () {
                 _globalViewEvent.active(eventParameter, localViewEvent.active(eventParameter));
             }
 
+            this.callInactiveAndUnload = function () {
+                _globalViewEvent.inactive(eventParameter, localViewEvent.inactive(eventParameter));
+                _globalViewEvent.unload(eventParameter, localViewEvent.unload(eventParameter));
+            }
+
             this.remove = function () {
                 this.node.remove();
                 if (!this.valid) return;
-                _globalViewEvent.inactive(eventParameter, localViewEvent.inactive(eventParameter));
-                _globalViewEvent.unload(eventParameter, localViewEvent.unload(eventParameter));
+                this.callInactiveAndUnload();
                 this.node = null;
                 this.valid = false;
                 localViewEvent = null;
@@ -431,6 +435,7 @@ window.oldmansoft.webapp = new (function () {
                 if (arguments.length == 1) {
                     this.node.html(arguments[0]);
                 } else {
+                    this.node.empty();
                     for (var i = 0; i < arguments.length; i++) {
                         this.node.append(arguments[i]);
                     }
@@ -942,6 +947,14 @@ window.oldmansoft.webapp = new (function () {
             });
         }
 
+        this.replace = function (link, data) {
+            var lastNode = links.last();
+            lastNode.callInactiveAndUnload();
+            lastNode.link = link;
+            lastNode.setContext(data);
+            lastNode.callLoadAndActive();
+        }
+
         this.clear = function () {
             _windowBox.clear();
             if (links.count() > 0) {
@@ -1096,6 +1109,14 @@ window.oldmansoft.webapp = new (function () {
             }
         }
 
+        this.replace = function (link, data) {
+            var lastNode = links.last();
+            lastNode.callInactiveAndUnload();
+            lastNode.link = link;
+            lastNode.setContext(data);
+            lastNode.callLoadAndActive();
+        }
+
         this.getElement = function () {
             return element;
         }
@@ -1131,7 +1152,8 @@ window.oldmansoft.webapp = new (function () {
 
     this.current = function () {
         return {
-            node: _activeView.getNode()
+            node: _activeView.getNode(),
+            view: _activeView
         };
     }
 
