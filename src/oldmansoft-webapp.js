@@ -1,5 +1,5 @@
 ﻿/*
-* v0.12.57
+* v0.13.58
 * https://github.com/Oldmansoft/webapp
 * Copyright 2016 Oldmansoft, Inc; http://www.apache.org/licenses/LICENSE-2.0
 */
@@ -1348,7 +1348,9 @@ window.oldmansoft.webapp = new (function () {
                 _dealHrefTarget._base(href);
                 return;
             }
-
+            if (target == "_none") {
+                return;
+            }
             if (_dealHrefTarget[target]) {
                 e.preventDefault();
                 _dealHrefTarget[target](href, $(this));
