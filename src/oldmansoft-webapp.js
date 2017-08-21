@@ -1,5 +1,5 @@
 ﻿/*
-* v0.14.60
+* v0.14.61
 * https://github.com/Oldmansoft/webapp
 * Copyright 2016 Oldmansoft, Inc; http://www.apache.org/licenses/LICENSE-2.0
 */
@@ -1073,6 +1073,10 @@ window.oldmansoft.webapp = new (function () {
         this.getNode = function () {
             return links.last().node;
         }
+
+        this.getLink = function () {
+            return links.last().link;
+        }
     }
 
     function openArea() {
@@ -1194,6 +1198,10 @@ window.oldmansoft.webapp = new (function () {
 
         this.getNode = function () {
             return links.last().node;
+        }
+
+        this.getLink = function () {
+            return links.last().link;
         }
     }
 
@@ -1385,11 +1393,16 @@ window.oldmansoft.webapp = new (function () {
         this.getNode = function () {
             return links.last().node;
         }
+
+        this.getLink = function () {
+            return links.last().link;
+        }
     }
 
     this.current = function () {
         return {
             node: _activeView.get().getNode(),
+            link: _activeView.get().getLink(),
             view: _activeView.get()
         };
     }
