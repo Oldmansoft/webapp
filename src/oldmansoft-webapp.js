@@ -1,5 +1,5 @@
 ﻿/*
-* v0.14.61
+* v0.14.62
 * https://github.com/Oldmansoft/webapp
 * Copyright 2016 Oldmansoft, Inc; http://www.apache.org/licenses/LICENSE-2.0
 */
@@ -1343,9 +1343,9 @@ window.oldmansoft.webapp = new (function () {
             if (links.count() > 1) {
                 if (links.get(links.count() - 2).valid) {
                     links.pop().remove();
+                    $this.linker.modify(links.getLink());
                     links.last().show();
                     $this.resetWindowScrollbar();
-                    $this.linker.modify(links.getLink());
                     if (closeCompleted) closeCompleted(false);
                 } else {
                     $this.linker.setChangeCompleted(closeCompleted);
