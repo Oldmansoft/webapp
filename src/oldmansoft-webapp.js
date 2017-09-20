@@ -1,5 +1,5 @@
 ﻿/*
-* v0.14.62
+* v0.14.63
 * https://github.com/Oldmansoft/webapp
 * Copyright 2016 Oldmansoft, Inc; http://www.apache.org/licenses/LICENSE-2.0
 */
@@ -11,7 +11,7 @@ window.oldmansoft.webapp = new (function () {
         loading_show_time: 1000,
         loading_hide_time: 200
     },
-    _isIeCore = "ActiveXObject" in window,
+    //_isIeCore = "ActiveXObject" in window,
     _text = {
         ok: "Ok",
         yes: "Yes",
@@ -164,11 +164,12 @@ window.oldmansoft.webapp = new (function () {
             isShow = true;
 
         function scrollTop(element, value) {
-            if (element.selector == "body" && _isIeCore) {
-                if (value != undefined)
+            if (element.selector == "body") {
+                if (value != undefined) {
                     $(document).scrollTop(value);
-                else
+                } else {
                     return $(document).scrollTop();
+                }
             } else {
                 if (value != undefined)
                     element.scrollTop(value);
