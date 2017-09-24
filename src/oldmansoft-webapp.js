@@ -1,5 +1,5 @@
 ﻿/*
-* v0.14.63
+* v0.14.64
 * https://github.com/Oldmansoft/webapp
 * Copyright 2016 Oldmansoft, Inc; http://www.apache.org/licenses/LICENSE-2.0
 */
@@ -11,7 +11,6 @@ window.oldmansoft.webapp = new (function () {
         loading_show_time: 1000,
         loading_hide_time: 200
     },
-    //_isIeCore = "ActiveXObject" in window,
     _text = {
         ok: "Ok",
         yes: "Yes",
@@ -238,9 +237,23 @@ window.oldmansoft.webapp = new (function () {
         }
 
         function targetMouseWheel(e) {
+            var node = e.target,
+                delta = e.originalEvent.wheelDelta,
+                targetScrollTop;
+            while (node != e.currentTarget && node != null && node.tagName != "HTML" && node.tagName != "BODY") {
+                if (node.clientHeight != node.scrollHeight) {
+                    if (delta > 0 && node.scrollTop > 0) {
+                        return true;
+                    }
+                    if (delta < 0 && node.scrollTop + node.clientHeight < node.scrollHeight) {
+                        return true;
+                    }
+                }
+                node = node.parentElement;
+            }
+
             if (targetHelper.contentHeight() <= targetHelper.viewHeight()) return true;
-            var delta = e.originalEvent.wheelDelta,
-                targetScrollTop = scrollTop(target);
+            targetScrollTop = scrollTop(target);
             if (delta < 0) {
                 if (targetScrollTop >= (targetHelper.contentHeight() - targetHelper.viewHeight())) {
                     return true;

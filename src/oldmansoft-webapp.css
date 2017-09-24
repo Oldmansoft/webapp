@@ -98,13 +98,16 @@
     position: absolute;
 }
 .scrollbar-track {
-    position: fixed;
+    position: relative;
     width: 12px;
     background-color: darkgray;
     opacity: 0.1;
     z-index: 1;
     transition: 0.3s;
     cursor: default;
+}
+body>.scrollbar-container>.scrollbar-track {
+    position: fixed;
 }
 .scrollbar-track:hover,.scrollbar-track.focus {
     opacity: 0.9 !important;
