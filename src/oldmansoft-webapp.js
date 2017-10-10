@@ -1,5 +1,5 @@
 ﻿/*
-* v0.14.64
+* v0.14.65
 * https://github.com/Oldmansoft/webapp
 * Copyright 2016 Oldmansoft, Inc; http://www.apache.org/licenses/LICENSE-2.0
 */
@@ -239,9 +239,11 @@ window.oldmansoft.webapp = new (function () {
         function targetMouseWheel(e) {
             var node = e.target,
                 delta = e.originalEvent.wheelDelta,
-                targetScrollTop;
+                targetScrollTop,
+                overflowY;
             while (node != e.currentTarget && node != null && node.tagName != "HTML" && node.tagName != "BODY") {
-                if (node.clientHeight != node.scrollHeight) {
+                overflowY = node.style.overflowY;
+                if ((overflowY == "auto" || overflowY == "scroll") && node.clientHeight != node.scrollHeight) {
                     if (delta > 0 && node.scrollTop > 0) {
                         return true;
                     }
