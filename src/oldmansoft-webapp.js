@@ -1,5 +1,5 @@
 ﻿/*
-* v0.14.65
+* v0.14.66
 * https://github.com/Oldmansoft/webapp
 * Copyright 2016 Oldmansoft, Inc; http://www.apache.org/licenses/LICENSE-2.0
 */
@@ -1083,6 +1083,7 @@ window.oldmansoft.webapp = new (function () {
             _modalBox.clear();
             if (links.count() > 0) {
                 links = new linkManagement();
+                _activeView.pop();
             }
         }
 
@@ -1209,6 +1210,7 @@ window.oldmansoft.webapp = new (function () {
             _windowBox.clear();
             if (links.count() > 0) {
                 links = new linkManagement();
+                _activeView.pop();
             }
         }
 
