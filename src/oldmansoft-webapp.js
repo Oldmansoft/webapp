@@ -1,5 +1,5 @@
 ﻿/*
-* v0.14.66
+* v0.14.67
 * https://github.com/Oldmansoft/webapp
 * Copyright 2016 Oldmansoft, Inc; http://www.apache.org/licenses/LICENSE-2.0
 */
@@ -596,11 +596,13 @@ window.oldmansoft.webapp = new (function () {
 
         this.clear = function () {
             if (!current) return;
+            $this.bodyManagement.shrink();
             if (current.close) current.close();
             current.node.remove();
             while (store.length > 0) {
                 current = store.pop();
                 core.append(current.node);
+                $this.bodyManagement.shrink();
                 if (current.close) current.close();
                 current.node.remove();
             }
@@ -703,10 +705,12 @@ window.oldmansoft.webapp = new (function () {
 
         this.clear = function () {
             if (!current) return;
+            $this.bodyManagement.shrink();
             if (current.close) current.close();
             current.node.remove();
             while (store.length > 0) {
                 current = store.pop();
+                $this.bodyManagement.shrink();
                 if (current.close) current.close();
                 current.node.remove();
             }
