@@ -1,5 +1,5 @@
 ﻿/*
-* v0.14.67
+* v0.14.68
 * https://github.com/Oldmansoft/webapp
 * Copyright 2016 Oldmansoft, Inc; http://www.apache.org/licenses/LICENSE-2.0
 */
@@ -551,9 +551,9 @@ window.oldmansoft.webapp = new (function () {
                 if (store.length > 0) {
                     current = store.pop();
                     core.append(current.node);
-                    if (fn) fn();
                     element.stop(true, true);
                     element.fadeIn(0);
+                    if (fn) fn();
                     return;
                 }
 
@@ -653,9 +653,9 @@ window.oldmansoft.webapp = new (function () {
 
                 if (store.length > 0) {
                     current = store.pop();
-                    if (fn) fn();
                     current.node.stop(true, true);
                     current.node.fadeIn(0);
+                    if (fn) fn();
                     return;
                 }
 
