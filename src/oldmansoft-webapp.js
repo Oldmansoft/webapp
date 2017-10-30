@@ -1,5 +1,5 @@
 ﻿/*
-* v0.15.69
+* v0.15.70
 * https://github.com/Oldmansoft/webapp
 * Copyright 2016 Oldmansoft, Inc; http://www.apache.org/licenses/LICENSE-2.0
 */
@@ -1380,12 +1380,12 @@ window.oldmansoft.webapp = new (function () {
                     for (i = 0; i < hrefs.length; i++) {
                         if (linksCount > i) {
                             if (links.get(i).link != hrefs[i] || (linksCount == i + 1 && hrefs.length == linksCount)) {
-                                links.replace(i, "main", hrefs[i], { baseLink: getPathHasAbsolutePathFromArray(hrefs, hrefs[i - 1], defaultLink) });
+                                links.replace(i, "main", hrefs[i], { baseLink: getPathHasAbsolutePathFromArray(hrefs, i - 1, defaultLink) });
                             } else {
                                 links.get(i).hide();
                             }
                         } else {
-                            links.push("main", hrefs[i], { baseLink: getPathHasAbsolutePathFromArray(hrefs, hrefs[i - 1], defaultLink) });
+                            links.push("main", hrefs[i], { baseLink: getPathHasAbsolutePathFromArray(hrefs, i - 1, defaultLink) });
                             element.append(links.last().node);
                         }
                     }
