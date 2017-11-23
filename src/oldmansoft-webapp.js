@@ -1,5 +1,5 @@
 ﻿/*
-* v0.15.70
+* v0.15.71
 * https://github.com/Oldmansoft/webapp
 * Copyright 2016 Oldmansoft, Inc; http://www.apache.org/licenses/LICENSE-2.0
 */
@@ -727,7 +727,14 @@ window.oldmansoft.webapp = new (function () {
                 element.append(header);
             }
             this.setBody = function (text) {
-                var body = $("<div></div>").addClass("dialog-body").text(text);;
+                var body = $("<div></div>").addClass("dialog-body");
+                if (text.indexOf("\n") > -1) {
+                    $.each(text.split("\n"), function (i, n) {
+                        body.append($("<p></p>").text(n));
+                    });
+                } else {
+                    body.text(text);
+                }
                 element.append(body);
             }
             this.setFooter = function () {

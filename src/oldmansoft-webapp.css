@@ -63,6 +63,9 @@
 .dialog-body {
     padding: 15px;
 }
+.dialog-body p {
+    margin: 0 0 5px 0;
+}
 .dialog-footer {
     padding: 15px;
     border-top: 1px solid #e5e5e5;
