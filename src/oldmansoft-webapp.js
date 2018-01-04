@@ -1,5 +1,5 @@
 ﻿/*
-* v0.16.72
+* v0.16.73
 * https://github.com/Oldmansoft/webapp
 * Copyright 2016 Oldmansoft, Inc; http://www.apache.org/licenses/LICENSE-2.0
 */
@@ -37,7 +37,8 @@ window.oldmansoft.webapp = new (function () {
     _modalBox;
 
     function linkParser(input) {
-        var store = [];
+        var store = [],
+            hashContent;
 
         function getHashContent(hash) {
             if (!hash) return "";
@@ -47,9 +48,14 @@ window.oldmansoft.webapp = new (function () {
 
         if (input instanceof Array) store = input.slice();
         else {
-            store = getHashContent(input).split("`");
-            for (var i = 0; i < store.length; i++) {
-                store[i] = store[i].replace(/%60/g, "`").replace(/%23/g, "#").replace(/%25/g, "%");
+            hashContent = getHashContent(input);
+            if (hashContent.indexOf("#") > -1) {
+                store = hashContent.replace(/%23/g, "#").split("#");
+            } else {
+                store = hashContent.split("`");
+                for (var i = 0; i < store.length; i++) {
+                    store[i] = store[i].replace(/%60/g, "`").replace(/%23/g, "#").replace(/%25/g, "%");
+                }
             }
         }
 
