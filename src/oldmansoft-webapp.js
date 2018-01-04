@@ -1,5 +1,5 @@
 ﻿/*
-* v0.16.73
+* v0.16.74
 * https://github.com/Oldmansoft/webapp
 * Copyright 2016 Oldmansoft, Inc; http://www.apache.org/licenses/LICENSE-2.0
 */
@@ -52,9 +52,9 @@ window.oldmansoft.webapp = new (function () {
             if (hashContent.indexOf("#") > -1) {
                 store = hashContent.replace(/%23/g, "#").split("#");
             } else {
-                store = hashContent.split("`");
+                store = hashContent.split("~");
                 for (var i = 0; i < store.length; i++) {
-                    store[i] = store[i].replace(/%60/g, "`").replace(/%23/g, "#").replace(/%25/g, "%");
+                    store[i] = store[i].replace(/%7e/g, "~").replace(/%23/g, "#").replace(/%25/g, "%");
                 }
             }
         }
@@ -78,9 +78,9 @@ window.oldmansoft.webapp = new (function () {
         this.getContent = function () {
             var links = [];
             for (var i = 0; i < store.length; i++) {
-                links.push(store[i].replace(/`/g, "%60").replace(/#/g, "%23").replace(/%/g, "%25"));
+                links.push(store[i].replace(/~/g, "%7e").replace(/#/g, "%23").replace(/%/g, "%25"));
             }
-            return links.join("`");
+            return links.join("~");
         }
     }
 
