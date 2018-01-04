@@ -38,7 +38,8 @@ window.oldmansoft.webapp = new (function () {
 
     function linkParser(input) {
         var store = [],
-            hashContent;
+            hashContent,
+            i;
 
         function getHashContent(hash) {
             if (!hash) return "";
@@ -53,7 +54,7 @@ window.oldmansoft.webapp = new (function () {
                 store = hashContent.replace(/%23/g, "#").split("#");
             } else {
                 store = hashContent.split("~");
-                for (var i = 0; i < store.length; i++) {
+                for (i = 0; i < store.length; i++) {
                     store[i] = store[i].replace(/%7e/g, "~").replace(/%23/g, "#").replace(/%25/g, "%");
                 }
             }
@@ -76,8 +77,9 @@ window.oldmansoft.webapp = new (function () {
         }
 
         this.getContent = function () {
-            var links = [];
-            for (var i = 0; i < store.length; i++) {
+            var links = [],
+                i;
+            for (i = 0; i < store.length; i++) {
                 links.push(store[i].replace(/~/g, "%7e").replace(/#/g, "%23").replace(/%/g, "%25"));
             }
             return links.join("~");
