@@ -1,5 +1,5 @@
 ﻿/*
-* v0.15.71
+* v0.16.72
 * https://github.com/Oldmansoft/webapp
 * Copyright 2016 Oldmansoft, Inc; http://www.apache.org/licenses/LICENSE-2.0
 */
@@ -35,6 +35,48 @@ window.oldmansoft.webapp = new (function () {
     _messageBox,
     _windowBox,
     _modalBox;
+
+    function linkParser(input) {
+        var store = [];
+
+        function getHashContent(hash) {
+            if (!hash) return "";
+            if (hash.substr(0, 1) == "#") return hash.substr(1);
+            return hash;
+        }
+
+        if (input instanceof Array) store = input.slice();
+        else {
+            store = getHashContent(input).split("`");
+            for (var i = 0; i < store.length; i++) {
+                store[i] = store[i].replace(/%60/g, "`").replace(/%23/g, "#").replace(/%25/g, "%");
+            }
+        }
+
+        this.getLinks = function () {
+            return store.slice();
+        }
+
+        this.push = function (item) {
+            return store.push(getHashContent(item));
+        }
+
+        this.pop = function () {
+            return store.pop();
+        }
+
+        this.last = function () {
+            return store[store.length - 1];
+        }
+
+        this.getContent = function () {
+            var links = [];
+            for (var i = 0; i < store.length; i++) {
+                links.push(store[i].replace(/`/g, "%60").replace(/#/g, "%23").replace(/%/g, "%25"));
+            }
+            return links.join("`");
+        }
+    }
 
     function getAbsolutePath(path, basePath, fullLink) {
         var indexOfAmpersand,
@@ -504,16 +546,14 @@ window.oldmansoft.webapp = new (function () {
         }
 
         this.getBackLink = function () {
-            var link = this.getLinks().slice();
-            link.splice(0, 0, "");
-            link.splice(link.length - 1, 1);
-            return link.join("#");
+            var link = new linkParser(this.getLinks());
+            link.pop();
+            return link.getContent();
         }
 
         this.getLink = function () {
-            var link = this.getLinks().slice();
-            link.splice(0, 0, "");
-            return link.join("#");
+            var link = new linkParser(this.getLinks());
+            return link.getContent();
         }
 
         this.getLinks = function () {
@@ -912,7 +952,7 @@ window.oldmansoft.webapp = new (function () {
             changeCallback(lastHash);
         }
         function hashChange() {
-            var href = fixHref(window.location.hash);
+            var href = new linkParser(window.location.hash).getContent();
             if (lastHash == href) {
                 return;
             }
@@ -932,7 +972,7 @@ window.oldmansoft.webapp = new (function () {
 
         this.modify = function (href) {
             window.location.hash = href;
-            lastHash = fixHref(href);
+            lastHash = new linkParser(href).getContent();
         }
         this.hash = function (href) {
             if (href == undefined) return window.location.hash;
@@ -944,23 +984,16 @@ window.oldmansoft.webapp = new (function () {
             return href;
         }
         this.addHash = function (href) {
-            href = fixHref(href);
-            if (window.location.hash == "") {
-                window.location.hash = "##" + href;
-            } else {
-                window.location.hash += "#" + href;
-            }
+            var link = new linkParser(window.location.hash);
+            link.push(href);
+            window.location.hash = link.getContent();
         }
         this.sameHash = function (href) {
-            href = fixHref(href);
-            var source = window.location.hash.split("#");
-            if (source.length == 1) {
-                source = ["", ""];
-            }
-            source.pop();
-            source.push(href);
-            window.location.hash = source.join("#");
-            if (href == lastHash) {
+            var link = new linkParser(window.location.hash);
+            link.pop();
+            link.push(href);
+            window.location.hash = link.getContent();
+            if (link.getContent() == lastHash) {
                 callLeave();
             }
         }
@@ -1357,8 +1390,7 @@ window.oldmansoft.webapp = new (function () {
             var hrefs,
                 i;
 
-            link = link.replace(/%23/g, '#');
-            hrefs = link.split("#")
+            hrefs = new linkParser(link).getLinks();
             _modalView.clear();
             _openView.clear();
             _messageBox.clear();
