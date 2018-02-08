@@ -1,5 +1,5 @@
 ﻿/*
-* v0.16.74
+* v0.16.75
 * https://github.com/Oldmansoft/webapp
 * Copyright 2016 Oldmansoft, Inc; http://www.apache.org/licenses/LICENSE-2.0
 */
@@ -1316,7 +1316,10 @@ window.oldmansoft.webapp = new (function () {
         var loadId = 0,
             element = $(viewNode),
             defaultLink = link,
-            links = new linkManagement();
+            links = new linkManagement(),
+            firstLoadContent = true;
+
+        if (element.is("body")) throw "viewNode can't be <body>";
 
         function setView(first, second) {
             var last;
@@ -1415,6 +1418,11 @@ window.oldmansoft.webapp = new (function () {
             loadContent(hrefs[hrefs.length - 1], getPathHasAbsolutePathFromArray(hrefs, hrefs.length - 2, defaultLink), function () {
                 var i,
                     linksCount;
+
+                if (firstLoadContent) {
+                    element.empty();
+                    firstLoadContent = false;
+                }
                 if (links.count() > hrefs.length && links.like(hrefs)) {
                     for (i = links.count() - 1; i > hrefs.length - 1; i--) {
                         links.pop().remove();
