@@ -1,5 +1,5 @@
 ﻿/*
-* v0.16.75
+* v0.18.76
 * https://github.com/Oldmansoft/webapp
 * Copyright 2016 Oldmansoft, Inc; http://www.apache.org/licenses/LICENSE-2.0
 */
@@ -34,7 +34,8 @@ window.oldmansoft.webapp = new (function () {
     _dealHrefTarget,
     _messageBox,
     _windowBox,
-    _modalBox;
+    _modalBox,
+    _canSetup = true;
 
     function linkParser(input) {
         var store = [],
@@ -1319,8 +1320,6 @@ window.oldmansoft.webapp = new (function () {
             links = new linkManagement(),
             firstLoadContent = true;
 
-        if (element.is("body")) throw "viewNode can't be <body>";
-
         function setView(first, second) {
             var last;
 
@@ -1401,6 +1400,7 @@ window.oldmansoft.webapp = new (function () {
             var hrefs,
                 i;
 
+            if (element.is("body")) throw "viewNode can't be <body>";
             hrefs = new linkParser(link).getLinks();
             _modalView.clear();
             _openView.clear();
@@ -1659,7 +1659,7 @@ window.oldmansoft.webapp = new (function () {
         if (typeof fn == "function") fn(_text);
     }
 
-    this.init = function (viewNode, defaultLink) {
+    this.initialization = function (viewNode, defaultLink) {
         function option(main) {
             this.viewNode = function (node) {
                 if (!node) return main.getElement();
@@ -1741,10 +1741,30 @@ window.oldmansoft.webapp = new (function () {
         _openView = new openArea();
         _modalView = new modalArea();
         _activeView.push(_mainView);
+        return new option(_mainView);
+    }
+
+    this.init = function (viewNode, defaultLink) {
+        var result = $this.initialization(viewNode, defaultLink);
         $this.linker._init(function (link) {
             _mainView.load(link, $this.linker.callChangeCompleted);
         });
-        return new option(_mainView);
+        return result;
+    }
+
+    this.setup = function (mainViewSelector, defaultLink) {
+        if (_canSetup) {
+            _canSetup = false;
+        } else {
+            throw "Has been setup";
+        }
+        var result = $this.initialization(viewNode, defaultLink);
+        $(function () {
+            $this.linker._init(function (link) {
+                _mainView.load(link, $this.linker.callChangeCompleted);
+            });
+        });
+        return result;
     }
 
     window.$app = {
@@ -1765,6 +1785,7 @@ window.oldmansoft.webapp = new (function () {
         reload: $this.viewReload,
         close: $this.viewClose,
         current: $this.current,
-        init: $this.init
+        init: $this.init,
+        setup: $this.setup
     };
 })();
