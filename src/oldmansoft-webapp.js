@@ -1,5 +1,5 @@
 ﻿/*
-* v0.19.77
+* v0.19.78
 * https://github.com/Oldmansoft/webapp
 * Copyright 2016 Oldmansoft, Inc; http://www.apache.org/licenses/LICENSE-2.0
 */
@@ -1806,11 +1806,6 @@ window.oldmansoft.webapp = new (function () {
                     _mainView.load(link, $this.linker.callChangeCompleted);
                 });
             }).fail(function (jqXHR, textStatus, errorThrown) {
-                if (currentId != loadId) {
-                    return;
-                }
-                loading.hide();
-
                 if (jqXHR.status == 401) {
                     _fnOnUnauthorized(layoutLink);
                 }
@@ -1823,6 +1818,7 @@ window.oldmansoft.webapp = new (function () {
                 } else {
                     content.text(response.eq(1).text());
                 }
+                $(layoutSelector).empty();
                 $(layoutSelector).append(title);
                 $(layoutSelector).append(content);
             });
