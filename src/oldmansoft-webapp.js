@@ -1,5 +1,5 @@
 ﻿/*
-* v0.18.76
+* v0.19.77
 * https://github.com/Oldmansoft/webapp
 * Copyright 2016 Oldmansoft, Inc; http://www.apache.org/licenses/LICENSE-2.0
 */
@@ -9,7 +9,8 @@ window.oldmansoft.webapp = new (function () {
     _setting = {
         timeover: 180000,
         loading_show_time: 1000,
-        loading_hide_time: 200
+        loading_hide_time: 200,
+        server_charset: "utf-8"
     },
     _text = {
         ok: "Ok",
@@ -1072,7 +1073,7 @@ window.oldmansoft.webapp = new (function () {
 
             loadPath = getAbsolutePath(link, getPathHasAbsolutePathFromArray(links.getLinks(), links.count() - 2, _mainView.getDefaultLink()), _mainView.getDefaultLink());
             $.ajax({
-                mimeType: 'text/html; charset=utf-8',
+                mimeType: 'text/html; charset=' + _setting.server_charset,
                 url: loadPath,
                 data: data,
                 type: type,
@@ -1215,7 +1216,7 @@ window.oldmansoft.webapp = new (function () {
 
             loadPath = getAbsolutePath(link, getPathHasAbsolutePathFromArray(links.getLinks(), links.count() - 2, _mainView.getDefaultLink()), _mainView.getDefaultLink());
             $.ajax({
-                mimeType: 'text/html; charset=utf-8',
+                mimeType: 'text/html; charset=' + _setting.server_charset,
                 url: loadPath,
                 data: data,
                 type: type,
@@ -1313,9 +1314,9 @@ window.oldmansoft.webapp = new (function () {
         }
     }
 
-    function viewArea(viewNode, link) {
+    function viewArea(viewNodeSelector, link) {
         var loadId = 0,
-            element = $(viewNode),
+            element = null,
             defaultLink = link,
             links = new linkManagement(),
             firstLoadContent = true;
@@ -1341,7 +1342,7 @@ window.oldmansoft.webapp = new (function () {
                 loadPath = getAbsolutePath(link, baseLink, defaultLink);
 
             $.ajax({
-                mimeType: 'text/html; charset=utf-8',
+                mimeType: 'text/html; charset=' + _setting.server_charset,
                 url: loadPath,
                 type: 'GET',
                 timeout: _setting.timeover
@@ -1399,7 +1400,7 @@ window.oldmansoft.webapp = new (function () {
         this.load = function (link, loadCompleted) {
             var hrefs,
                 i;
-
+            if (element == null) element = $(viewNodeSelector);
             if (element.is("body")) throw "viewNode can't be <body>";
             hrefs = new linkParser(link).getLinks();
             _modalView.clear();
@@ -1481,8 +1482,8 @@ window.oldmansoft.webapp = new (function () {
             return element;
         }
 
-        this.setElement = function (node) {
-            return element = $(node);
+        this.setElement = function (nodeSelector) {
+            return element = $(nodeSelector);
         }
 
         this.getDefaultLink = function () {
@@ -1659,11 +1660,11 @@ window.oldmansoft.webapp = new (function () {
         if (typeof fn == "function") fn(_text);
     }
 
-    this.initialization = function (viewNode, defaultLink) {
+    this.initialization = function (viewNodeSelector, defaultLink) {
         function option(main) {
-            this.viewNode = function (node) {
-                if (!node) return main.getElement();
-                main.setElement(node);
+            this.viewNode = function (nodeSelector) {
+                if (!nodeSelector) return main.getElement();
+                main.setElement(nodeSelector);
                 return this;
             }
             this.defaultLink = function (link) {
@@ -1737,15 +1738,15 @@ window.oldmansoft.webapp = new (function () {
         $(document).on("touchmove", dealTouchMove);
 
         _globalViewEvent = new viewEvent();
-        _mainView = new viewArea(viewNode, defaultLink);
+        _mainView = new viewArea(viewNodeSelector, defaultLink);
         _openView = new openArea();
         _modalView = new modalArea();
         _activeView.push(_mainView);
         return new option(_mainView);
     }
 
-    this.init = function (viewNode, defaultLink) {
-        var result = $this.initialization(viewNode, defaultLink);
+    this.init = function (viewNodeSelector, defaultLink) {
+        var result = $this.initialization(viewNodeSelector, defaultLink);
         $this.linker._init(function (link) {
             _mainView.load(link, $this.linker.callChangeCompleted);
         });
@@ -1758,10 +1759,72 @@ window.oldmansoft.webapp = new (function () {
         } else {
             throw "Has been setup";
         }
-        var result = $this.initialization(viewNode, defaultLink);
+        var result = $this.initialization(mainViewSelector, defaultLink);
         $(function () {
             $this.linker._init(function (link) {
                 _mainView.load(link, $this.linker.callChangeCompleted);
+            });
+        });
+        return result;
+    }
+
+    this.setupLayout = function (layoutSelector, layoutLink, mainViewSelector, defaultLink) {
+        if (_canSetup) {
+            _canSetup = false;
+        } else {
+            throw "Has been setup";
+        }
+        var result = $this.initialization(mainViewSelector, defaultLink);
+        $(function () {
+            $.ajax({
+                mimeType: 'text/html; charset=' + _setting.server_charset,
+                url: layoutLink,
+                type: 'GET',
+                timeout: _setting.timeover
+            }).done(function (data, textStatus, jqXHR) {
+                var json = jqXHR.getResponseHeader("X-Responded-JSON"),
+                    responded;
+
+                if (json) {
+                    responded = JSON.parse(json);
+                    if (responded.status == 401) {
+                        if (!_fnOnUnauthorized(responded.headers.location)) {
+                            if (responded.headers && responded.headers.location) {
+                                document.location = responded.headers.location;
+                                return;
+                            }
+                        }
+                    }
+                }
+
+                if (isHtmlDocument(data)) {
+                    alert("You try to load wrong content: " + layoutLink);
+                    return;
+                }
+                $(layoutSelector).html(data);
+                $this.linker._init(function (link) {
+                    _mainView.load(link, $this.linker.callChangeCompleted);
+                });
+            }).fail(function (jqXHR, textStatus, errorThrown) {
+                if (currentId != loadId) {
+                    return;
+                }
+                loading.hide();
+
+                if (jqXHR.status == 401) {
+                    _fnOnUnauthorized(layoutLink);
+                }
+                var response = $(jqXHR.responseText),
+                    title = $("<h4></h4>").text(errorThrown),
+                    content = $("<pre></pre>");
+
+                if (response[11] != null && response[11].nodeType == 8) {
+                    content.text(response[11].data);
+                } else {
+                    content.text(response.eq(1).text());
+                }
+                $(layoutSelector).append(title);
+                $(layoutSelector).append(content);
             });
         });
         return result;
@@ -1786,6 +1849,7 @@ window.oldmansoft.webapp = new (function () {
         close: $this.viewClose,
         current: $this.current,
         init: $this.init,
-        setup: $this.setup
+        setup: $this.setup,
+        setupLayout: $this.setupLayout
     };
 })();

@@ -32,11 +32,11 @@ $app.configSetting(function (setting) {
 
 ```
 
-### 初始化
+### 初始化设置
 
 初始化需要指定加载内容的主视图区域和默认加载地址。
 ```js
-var option = $app.init($("#ViewArea"), "/path");
+var option = $app.setup("#ViewArea", "/path");
 ```
 
 初始化后返回的对象可以进一下更改初始化选项。
@@ -53,7 +53,7 @@ option.unauthorized(function () {
 #### 主视图区域
 更改或获取主视图区域。
 ```js
-option.viewNode($("#ViewArea"));
+option.viewNode("#ViewArea");
 ```
 
 #### 默认加载地址
