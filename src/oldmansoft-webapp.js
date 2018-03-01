@@ -1,5 +1,5 @@
 ﻿/*
-* v0.19.78
+* v0.19.79
 * https://github.com/Oldmansoft/webapp
 * Copyright 2016 Oldmansoft, Inc; http://www.apache.org/licenses/LICENSE-2.0
 */
@@ -16,7 +16,8 @@ window.oldmansoft.webapp = new (function () {
         ok: "Ok",
         yes: "Yes",
         no: "No",
-        loading: "Loading"
+        loading: "Loading",
+        load_layout_error: "load layout error, click Ok to reload.",
     },
     _mainView = null,
     _openView = null,
@@ -1809,18 +1810,9 @@ window.oldmansoft.webapp = new (function () {
                 if (jqXHR.status == 401) {
                     _fnOnUnauthorized(layoutLink);
                 }
-                var response = $(jqXHR.responseText),
-                    title = $("<h4></h4>").text(errorThrown),
-                    content = $("<pre></pre>");
-
-                if (response[11] != null && response[11].nodeType == 8) {
-                    content.text(response[11].data);
-                } else {
-                    content.text(response.eq(1).text());
-                }
-                $(layoutSelector).empty();
-                $(layoutSelector).append(title);
-                $(layoutSelector).append(content);
+                $this.dialog.alert(_text.load_layout_error, errorThrown).ok(function () {
+                    document.location.reload();
+                });
             });
         });
         return result;
