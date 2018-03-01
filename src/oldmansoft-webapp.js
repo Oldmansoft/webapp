@@ -1,5 +1,5 @@
 ﻿/*
-* v0.19.79
+* v0.19.80
 * https://github.com/Oldmansoft/webapp
 * Copyright 2016 Oldmansoft, Inc; http://www.apache.org/licenses/LICENSE-2.0
 */
@@ -37,7 +37,8 @@ window.oldmansoft.webapp = new (function () {
     _messageBox,
     _windowBox,
     _modalBox,
-    _canSetup = true;
+    _canSetup = true,
+    _hideMainViewFirstLoading = false;
 
     function linkParser(input) {
         var store = [],
@@ -1342,6 +1343,12 @@ window.oldmansoft.webapp = new (function () {
                 loading = $this.loadingTip.show(),
                 loadPath = getAbsolutePath(link, baseLink, defaultLink);
 
+            if (_hideMainViewFirstLoading) {
+                loading.hide();
+                loading = null;
+                _hideMainViewFirstLoading = false;
+            }
+
             $.ajax({
                 mimeType: 'text/html; charset=' + _setting.server_charset,
                 url: loadPath,
@@ -1351,7 +1358,7 @@ window.oldmansoft.webapp = new (function () {
                 if (currentId != loadId) {
                     return;
                 }
-                loading.hide();
+                if (loading) loading.hide();
 
                 var json = jqXHR.getResponseHeader("X-Responded-JSON"),
                     responded;
@@ -1379,7 +1386,7 @@ window.oldmansoft.webapp = new (function () {
                 if (currentId != loadId) {
                     return;
                 }
-                loading.hide();
+                if (loading) loading.hide();
 
                 if (jqXHR.status == 401) {
                     _fnOnUnauthorized(loadPath);
@@ -1803,6 +1810,7 @@ window.oldmansoft.webapp = new (function () {
                     return;
                 }
                 $(layoutSelector).html(data);
+                _hideMainViewFirstLoading = true;
                 $this.linker._init(function (link) {
                     _mainView.load(link, $this.linker.callChangeCompleted);
                 });
