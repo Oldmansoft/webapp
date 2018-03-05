@@ -19,6 +19,7 @@ $app.configText(function (text) {
     text.yes = "是";
     text.no = "否";
     text.loading = "加载中";
+    text.load_layout_error = "加载布局出错，点击“好的”重新加载。";
 });
 ```
 
@@ -28,6 +29,7 @@ $app.configSetting(function (setting) {
     setting.timeover = 180000;
     setting.loading_show_time = 200;
     setting.loading_hide_time = 100;
+    setting.server_charset = "utf-8";
 });
 
 ```
@@ -92,12 +94,12 @@ option.viewUnloaded(function (view, unloadReturn) {
 指定不同的 target，可实现叠加视图，视图关闭时，可以直接从缓存中显示出来。
 
 #### 空值
-等同 _base
+等同 _link
 
-#### _base
+#### _link
 加载内容替换主视图。
 ```html
-<a href="/path" target="_base">other</a>
+<a href="/path" target="_link">other</a>
 ```
 
 #### _add
@@ -192,22 +194,21 @@ $app.event().onUnload(function (view) { });
 #### 链接方法
 
 ##### 更换地址
-相当于链接的目标 _base。
+相当于链接的目标 _link。
 ```js
-$app.hash("/path");
-$app.baseHash("/path");
+$app.link("/path");
 ```
 
 ##### 叠加地址
 相当于链接的目标 _add。
 ```js
-$app.addHash("/path");
+$app.add("/path");
 ```
 
 ##### 替换当前地址
 相当于链接的目标 _same。
 ```js
-$app.sameHash("/path");
+$app.same("/path");
 ```
 
 ##### 重载当前主视图
@@ -237,7 +238,7 @@ loading.hide();
 ##### 判断脚本加载后执行
 支持多个脚本地址。
 ```js
-$app.loadScript("/path").done(function () { });
+$app.loadScript("/path1", "/path2").done(function () { });
 ```
 
 ##### 获取当前视图信息

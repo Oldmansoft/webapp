@@ -1,5 +1,5 @@
 ﻿/*
-* v0.20.83
+* v0.21.84
 * https://github.com/Oldmansoft/webapp
 * Copyright 2016 Oldmansoft, Inc; http://www.apache.org/licenses/LICENSE-2.0
 */
@@ -213,7 +213,9 @@ window.oldmansoft.webapp = new (function () {
     }
 
     this.scrollbar = function (target) {
-        if (!target) return;
+        if (!target) {
+            return;
+        }
         var targetDom,
             targetHelper,
             container,
@@ -398,13 +400,17 @@ window.oldmansoft.webapp = new (function () {
         targetHelper.bindMouseWheel();
 
         this.show = function () {
-            if (isShow) return;
+            if (isShow) {
+                return;
+            }
             container.show();
             targetHelper.bindMouseWheel();
             isShow = true;
         }
         this.hide = function () {
-            if (!isShow) return;
+            if (!isShow) {
+                return;
+            }
             targetHelper.unbindMouseWheel();
             container.hide();
             isShow = false;
@@ -463,7 +469,9 @@ window.oldmansoft.webapp = new (function () {
             eventParameter = new viewEventParameter(this.node, name, level);
 
             this.hide = function () {
-                if (!this.valid || !visible) return;
+                if (!this.valid || !visible) {
+                    return;
+                }
                 var win = $(window);
                 scrollTop = win.scrollTop();
                 scrollLeft = win.scrollLeft();
@@ -484,7 +492,9 @@ window.oldmansoft.webapp = new (function () {
 
             this.remove = function () {
                 this.node.remove();
-                if (!this.valid) return;
+                if (!this.valid) {
+                    return;
+                }
                 this.callInactiveAndUnload();
                 this.node = null;
                 this.valid = false;
@@ -492,7 +502,9 @@ window.oldmansoft.webapp = new (function () {
             }
 
             this.show = function () {
-                if (!this.valid || visible) return;
+                if (!this.valid || visible) {
+                    return;
+                }
                 this.node.show();
                 _globalViewEvent.active(eventParameter, localViewEvent.active(eventParameter));
                 $(window).scrollLeft(scrollLeft);
@@ -501,12 +513,16 @@ window.oldmansoft.webapp = new (function () {
             }
 
             this.activeEvent = function () {
-                if (!localViewEvent) return;
+                if (!localViewEvent) {
+                    return;
+                }
                 _globalViewEvent.active(eventParameter, localViewEvent.active(eventParameter));
             }
 
             this.inactiveEvent = function () {
-                if (!localViewEvent) return;
+                if (!localViewEvent) {
+                    return;
+                }
                 _globalViewEvent.inactive(eventParameter, localViewEvent.inactive(eventParameter));
             }
 
@@ -596,7 +612,9 @@ window.oldmansoft.webapp = new (function () {
 	        current = null;
 
         function close(event, fn) {
-            if (event && event.target != event.currentTarget) return;
+            if (event && event.target != event.currentTarget) {
+                return;
+            }
 
             element.stop(true);
             element.fadeOut(store.length > 0 ? 0 : 200, function () {
@@ -623,7 +641,9 @@ window.oldmansoft.webapp = new (function () {
             });
         }
         function initElement() {
-            if (isInit) return;
+            if (isInit) {
+                return;
+            }
             isInit = true;
             element = $("<div></div>").addClass(className).addClass("box-background");
             if (isMiddle) {
@@ -656,7 +676,9 @@ window.oldmansoft.webapp = new (function () {
         }
 
         this.clear = function () {
-            if (!current) return;
+            if (!current) {
+                return;
+            }
             $this.bodyManagement.shrink();
             if (current.close) current.close();
             current.node.remove();
@@ -699,7 +721,9 @@ window.oldmansoft.webapp = new (function () {
 	        current = null;
 
         function close(event, fn) {
-            if (event && event.target != event.currentTarget) return;
+            if (event && event.target != event.currentTarget) {
+                return;
+            }
 
             current.node.stop(true);
             current.node.fadeOut(store.length > 0 ? 0 : 200, function () {
@@ -725,7 +749,9 @@ window.oldmansoft.webapp = new (function () {
             });
         }
         function initElement() {
-            if (isInit) return;
+            if (isInit) {
+                return;
+            }
             isInit = true;
 
             element = $("<div></div>").addClass("modal-areas");
@@ -742,7 +768,9 @@ window.oldmansoft.webapp = new (function () {
             container.append($("<div></div>").addClass("layout-vertical"));
             container.appendTo(element);
             container.on("click", function (e) {
-                if (e.currentTarget != e.target) return;
+                if (e.currentTarget != e.target) {
+                    return;
+                }
                 _modalView.close();
             });
             return container;
@@ -765,7 +793,9 @@ window.oldmansoft.webapp = new (function () {
         }
 
         this.clear = function () {
-            if (!current) return;
+            if (!current) {
+                return;
+            }
             $this.bodyManagement.shrink();
             if (current.close) current.close();
             current.node.remove();
@@ -930,7 +960,9 @@ window.oldmansoft.webapp = new (function () {
         var element;
 
         function initElement() {
-            if (element != null) return;
+            if (element != null) {
+                return;
+            }
             element = $("<div></div>").addClass("loading-background").addClass("box-background");
             var dialog = $("<div></div>").addClass("loading-box").addClass("box-panel"),
                 text = $("<span></span>").text(_text.loading);
@@ -987,7 +1019,9 @@ window.oldmansoft.webapp = new (function () {
         }
 
         this.callChangeCompleted = function (isNewContent) {
-            if (!changeCompleted) return;
+            if (!changeCompleted) {
+                return;
+            }
             changeCompleted(isNewContent);
             changeCompleted = null;
         }
@@ -997,20 +1031,32 @@ window.oldmansoft.webapp = new (function () {
             lastHash = new linkParser(href).getContent();
         }
         this.hash = function (href) {
-            if (href == undefined) return window.location.hash;
+            if (href == undefined) {
+                return window.location.hash;
+            }
 
-            window.location.hash = linkEncode(href);
+            window.location.hash = href;
             if (href == lastHash) {
                 callLeave();
             }
             return href;
         }
-        this.addHash = function (href) {
+        this.link = function (href) {
+            if (href == undefined) {
+                return _activeView.get().getLink();
+            }
+            href = linkEncode(href)
+            window.location.hash = href;
+            if (href == lastHash) {
+                callLeave();
+            }
+        }
+        this.add = function (href) {
             var link = new linkParser(window.location.hash);
             link.push(href);
             window.location.hash = link.getContent();
         }
-        this.sameHash = function (href) {
+        this.same = function (href) {
             var link = new linkParser(window.location.hash);
             link.pop();
             link.push(href);
@@ -1023,7 +1069,9 @@ window.oldmansoft.webapp = new (function () {
             callLeave();
         }
         this._init = function (fnChangeCall) {
-            if (initHashChange) return;
+            if (initHashChange) {
+                return;
+            }
             initHashChange = true;
 
             changeCallback = fnChangeCall;
@@ -1067,7 +1115,9 @@ window.oldmansoft.webapp = new (function () {
         }
 
         function setOldView(first, second) {
-            if (links.count() == 0) return;
+            if (links.count() == 0) {
+                return;
+            }
 
             var last = links.last();
             last.callInactiveAndUnload();
@@ -1208,7 +1258,9 @@ window.oldmansoft.webapp = new (function () {
         }
 
         function setOldView(first, second) {
-            if (links.count() == 0) return;
+            if (links.count() == 0) {
+                return;
+            }
 
             var last = links.last();
             last.callInactiveAndUnload();
@@ -1580,7 +1632,9 @@ window.oldmansoft.webapp = new (function () {
         if (loading.length > 0 && !loading.data("work") && $(window).scrollTop() + $(window).height() > loading.offset().top) {
             loading.data("work", true);
             src = loading.attr("data-src");
-            if (!src) return;
+            if (!src) {
+                return;
+            }
             $.get(src, function (data) {
                 loading.before(data);
                 loading.remove();
@@ -1611,14 +1665,18 @@ window.oldmansoft.webapp = new (function () {
     }
 
     _dealHrefTarget = {
+        // Obsolete(_link)
         _base: function (href) {
-            $this.linker.hash(href);
+            $this.linker.link(href);
+        },
+        _link: function (href) {
+            $this.linker.link(href);
         },
         _add: function (href) {
-            $this.linker.addHash(href);
+            $this.linker.add(href);
         },
         _same: function (href) {
-            $this.linker.sameHash(href);
+            $this.linker.same(href);
         },
         _open: function (href, caller) {
             $this.open(href, caller.attr("data-data"));
@@ -1734,9 +1792,11 @@ window.oldmansoft.webapp = new (function () {
             }
 
             if (!target) {
-                if (!_isDealLinkEmptyTarget) return;
+                if (!_isDealLinkEmptyTarget) {
+                    return;
+                }
                 e.preventDefault();
-                _dealHrefTarget._base(href);
+                _dealHrefTarget._link(href);
                 return;
             }
             if (target == "_none") {
@@ -1845,9 +1905,15 @@ window.oldmansoft.webapp = new (function () {
         loading: $this.loadingTip.show,
         loadScript: $this.scriptLoader.load,
         hash: $this.linker.hash,
+        // Obsolete(link)
         baseHash: $this.linker.hash,
-        addHash: $this.linker.addHash,
-        sameHash: $this.linker.sameHash,
+        // Obsolete(add)
+        addHash: $this.linker.add,
+        // Obsolete(same)
+        sameHash: $this.linker.same,
+        link: $this.linker.link,
+        add: $this.linker.add,
+        same: $this.linker.same,
         open: $this.open,
         modal: $this.modal,
         event: $this.event,
