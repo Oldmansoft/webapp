@@ -1,5 +1,5 @@
 ﻿/*
-* v0.21.84
+* v0.21.85
 * https://github.com/Oldmansoft/webapp
 * Copyright 2016 Oldmansoft, Inc; http://www.apache.org/licenses/LICENSE-2.0
 */
@@ -1879,7 +1879,7 @@ window.oldmansoft.webapp = new (function () {
                     alert("You try to load wrong content: " + layoutLink);
                     return;
                 }
-                $(layoutSelector).html(data);
+                $(layoutSelector).html(data).children().unwrap();
                 _hideMainViewFirstLoading = true;
                 $this.linker._init(function (link) {
                     _mainView.load(link, $this.linker.callChangeCompleted);
