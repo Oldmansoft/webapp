@@ -1,5 +1,5 @@
 ﻿/*
-* v0.21.85
+* v0.21.86
 * https://github.com/Oldmansoft/webapp
 * Copyright 2016 Oldmansoft, Inc; http://www.apache.org/licenses/LICENSE-2.0
 */
@@ -64,7 +64,7 @@ window.oldmansoft.webapp = new (function () {
         if (input instanceof Array) store = input.slice();
         else {
             hashContent = getHashContent(input);
-            if (hashContent.indexOf("#") > -1) {
+            if (hashContent.indexOf("#") > -1 || hashContent.indexOf("%23") > -1) {
                 store = hashContent.replace(/%23/g, "#").split("#");
             } else {
                 store = hashContent.split("~");
