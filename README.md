@@ -211,7 +211,7 @@ $app.add("/path");
 $app.same("/path");
 ```
 
-##### 重载当前主视图
+##### 重载当前视图
 ```js
 $app.reload();
 ```
@@ -224,8 +224,10 @@ $app.open("/path", { key: value});
 ```
 
 ##### 关闭或返回地址
+可传递参数给打开页面的回调方法
 ```js
 $app.close();
+$app.close(true);
 ```
 
 ##### 加载提示
