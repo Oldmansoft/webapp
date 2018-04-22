@@ -1,5 +1,5 @@
 ﻿/*
-* v0.21.89
+* v0.22.90
 * https://github.com/Oldmansoft/webapp
 * Copyright 2016 Oldmansoft, Inc; http://www.apache.org/licenses/LICENSE-2.0
 */
@@ -42,10 +42,15 @@ window.oldmansoft.webapp = new (function () {
 
     function linkEncode(text) {
         if (!text) return "";
-        return text.replace(/\$/g, "$24").replace(/~/g, "$7e").replace(/#/g, "$23").replace(/\//g, "$2f").replace(/\?/g, "$3f");
+        return text.replace(/-/g, "-2d").replace(/_/g, "-5f").replace(/#/g, "-23").replace(/\//g, "-2f").replace(/\?/g, "-3f");
     }
 
     function linkDecode(code) {
+        if (!code) return "";
+        return code.replace(/\-5f/g, "_").replace(/\-23/g, "#").replace(/\-2f/g, "/").replace(/\-3f/g, "?").replace(/\-2d/g, "-");
+    }
+
+    function linkDecode_tilde(code) {
         if (!code) return "";
         return code.replace(/\$7e/g, "~").replace(/\$23/g, "#").replace(/\$2f/g, "/").replace(/\$3f/g, "?").replace(/\$24/g, "$");
     }
@@ -66,8 +71,13 @@ window.oldmansoft.webapp = new (function () {
             hashContent = getHashContent(input);
             if (hashContent.indexOf("#") > -1 || hashContent.indexOf("%23") > -1) {
                 store = hashContent.replace(/%23/g, "#").split("#");
-            } else {
+            } else if (hashContent.indexOf("$") > -1) {
                 store = hashContent.split("~");
+                for (i = 0; i < store.length; i++) {
+                    store[i] = linkDecode_tilde(store[i]);
+                }
+            } else {
+                store = hashContent.split("_");
                 for (i = 0; i < store.length; i++) {
                     store[i] = linkDecode(store[i]);
                 }
@@ -96,7 +106,7 @@ window.oldmansoft.webapp = new (function () {
             for (i = 0; i < store.length; i++) {
                 links.push(linkEncode(store[i]));
             }
-            return links.join("~");
+            return links.join("_");
         }
     }
 
