@@ -1,5 +1,5 @@
 ﻿/*
-* v0.21.88
+* v0.21.89
 * https://github.com/Oldmansoft/webapp
 * Copyright 2016 Oldmansoft, Inc; http://www.apache.org/licenses/LICENSE-2.0
 */
@@ -1732,6 +1732,10 @@ window.oldmansoft.webapp = new (function () {
         }
     }
 
+    this.find = function (selector) {
+        return $this.current().node.find(selector);
+    }
+
     this.configSetting = function (fn) {
         if (typeof fn == "function") fn(_setting);
     }
@@ -1924,6 +1928,7 @@ window.oldmansoft.webapp = new (function () {
         reload: $this.viewReload,
         close: $this.viewClose,
         current: $this.current,
+        find: $this.find,
         init: $this.init,
         setup: $this.setup,
         setupLayout: $this.setupLayout
