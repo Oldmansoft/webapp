@@ -1,5 +1,5 @@
 ﻿/*
-* v0.25.94
+* v0.25.95
 * https://github.com/Oldmansoft/webapp
 * Copyright 2016 Oldmansoft, Inc; http://www.apache.org/licenses/LICENSE-2.0
 */
@@ -1669,7 +1669,8 @@ window.oldmansoft.webapp = new (function () {
             isCancel = true;
 
         if ($("body").hasClass("layout-expanded")) {
-            path = e.originalEvent.path
+            path = e.originalEvent.path;
+            if (!path) return;
             for (i = 0; i < path.length; i++) {
                 if (path[i].tagName == "BODY") break;
                 if (path[i].scrollHeight > path[i].clientHeight) {
