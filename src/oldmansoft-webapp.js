@@ -1,5 +1,5 @@
 ﻿/*
-* v0.25.95
+* v0.25.96
 * https://github.com/Oldmansoft/webapp
 * Copyright 2016 Oldmansoft, Inc; http://www.apache.org/licenses/LICENSE-2.0
 */
@@ -222,7 +222,7 @@ window.oldmansoft.webapp = new (function () {
                 if (_WindowScrollBar) _WindowScrollBar.show();
             }
             if (count < 0) {
-                throw "shrink error";
+                throw new Error("shrink error");
             }
         }
     }
@@ -675,7 +675,7 @@ window.oldmansoft.webapp = new (function () {
             initElement();
             if (current) {
                 if (current.node.data("type") == "message") {
-                    throw "not allow show again after message show.";
+                    throw new Error("not allow show again after message show.");
                 }
                 store.push({ node: current.node.detach(), close: current.close });
             }
@@ -721,7 +721,7 @@ window.oldmansoft.webapp = new (function () {
         }
         this.pop = function () {
             if (stack.length == 1) {
-                throw "error call";
+                throw new Error("error call");
             }
             current = stack.pop();
             return current;
@@ -1490,7 +1490,7 @@ window.oldmansoft.webapp = new (function () {
             var hrefs,
                 i;
             if (element == null) element = $(viewNodeSelector);
-            if (element.is("body")) throw "viewNode can't be <body>";
+            if (element.is("body")) throw new Error("viewNode can't be <body>");
             hrefs = new linkParser(link).getLinks();
             _modalView.clear();
             _openView.clear();
@@ -1859,7 +1859,7 @@ window.oldmansoft.webapp = new (function () {
         if (_canSetup) {
             _canSetup = false;
         } else {
-            throw "Has been setup";
+            throw new Error("Has been setup");
         }
         var result = $this.initialization(mainViewSelector, defaultLink);
         $(function () {
@@ -1874,7 +1874,7 @@ window.oldmansoft.webapp = new (function () {
         if (_canSetup) {
             _canSetup = false;
         } else {
-            throw "Has been setup";
+            throw new Error("Has been setup");
         }
         var result = $this.initialization(mainViewSelector, defaultLink);
         $(function () {
