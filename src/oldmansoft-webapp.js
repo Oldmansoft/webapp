@@ -1,5 +1,5 @@
 ﻿/*
-* v0.25.96
+* v0.25.97
 * https://github.com/Oldmansoft/webapp
 * Copyright 2016 Oldmansoft, Inc; http://www.apache.org/licenses/LICENSE-2.0
 */
@@ -1421,13 +1421,13 @@ window.oldmansoft.webapp = new (function () {
 
         function loadContent(link, baseLink, loadContentCompleted, loadCompleted) {
             var currentId = ++loadId,
-                loading = $this.loadingTip.show(),
+                loading = null,
                 loadPath = getAbsolutePath(link, baseLink, defaultLink);
 
             if (_hideMainViewFirstLoading) {
-                loading.hide();
-                loading = null;
                 _hideMainViewFirstLoading = false;
+            } else {
+                loading = $this.loadingTip.show();
             }
 
             $.ajax({
@@ -1847,15 +1847,16 @@ window.oldmansoft.webapp = new (function () {
         return new option(_mainView);
     }
 
-    this.init = function (viewNodeSelector, defaultLink) {
+    this.init = function (viewNodeSelector, defaultLink, hideFirstLoading) {
         var result = $this.initialization(viewNodeSelector, defaultLink);
+        if (hideFirstLoading) _hideMainViewFirstLoading = true;
         $this.linker._init(function (link) {
             _mainView.load(link, $this.linker.callChangeCompleted);
         });
         return result;
     }
 
-    this.setup = function (mainViewSelector, defaultLink) {
+    this.setup = function (mainViewSelector, defaultLink, hideFirstLoading) {
         if (_canSetup) {
             _canSetup = false;
         } else {
@@ -1863,6 +1864,7 @@ window.oldmansoft.webapp = new (function () {
         }
         var result = $this.initialization(mainViewSelector, defaultLink);
         $(function () {
+            if (hideFirstLoading) _hideMainViewFirstLoading = true;
             $this.linker._init(function (link) {
                 _mainView.load(link, $this.linker.callChangeCompleted);
             });
