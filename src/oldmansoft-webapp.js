@@ -1,5 +1,5 @@
 ﻿/*
-* v0.25.97
+* v0.26.98
 * https://github.com/Oldmansoft/webapp
 * Copyright 2016 Oldmansoft, Inc; http://www.apache.org/licenses/LICENSE-2.0
 */
@@ -24,6 +24,9 @@ window.oldmansoft.webapp = new (function () {
     _modalView = null,
     _activeView = null,
     _fnOnUnauthorized = function () {
+        return false;
+    },
+    _fnOnLoadTimeout = function () {
         return false;
     },
     _currentViewEvent = null,
@@ -544,10 +547,10 @@ window.oldmansoft.webapp = new (function () {
             this.setContext = function () {
                 _currentViewEvent = new viewEvent();
 
+                this.node.empty();
                 if (arguments.length == 1) {
                     this.node.html(arguments[0]);
                 } else {
-                    this.node.empty();
                     for (var i = 0; i < arguments.length; i++) {
                         this.node.append(arguments[i]);
                     }
@@ -1186,6 +1189,13 @@ window.oldmansoft.webapp = new (function () {
                 loading.hide();
                 if (jqXHR.status == 401) {
                     _fnOnUnauthorized(loadPath);
+                } else if (jqXHR.status == 0 && textStatus == "timeout") {
+                    var onLoadTimeoutResult = _fnOnLoadTimeout();
+                    if (onLoadTimeoutResult) {
+                        if (loadOption.refresh) setOldView(onLoadTimeoutResult);
+                        else setView(link, data, type, onLoadTimeoutResult);
+                        return;
+                    }
                 }
                 var response = $(jqXHR.responseText),
                     title = $("<h4></h4>").text(errorThrown),
@@ -1333,6 +1343,13 @@ window.oldmansoft.webapp = new (function () {
                 loading.hide();
                 if (jqXHR.status == 401) {
                     _fnOnUnauthorized(loadPath);
+                } else if (jqXHR.status == 0 && textStatus == "timeout") {
+                    var onLoadTimeoutResult = _fnOnLoadTimeout();
+                    if (onLoadTimeoutResult) {
+                        if (loadOption.refresh) setOldView(onLoadTimeoutResult);
+                        else setView(link, data, type, onLoadTimeoutResult);
+                        return;
+                    }
                 }
                 var response = $(jqXHR.responseText),
                     title = $("<h4></h4>").text(errorThrown),
@@ -1344,8 +1361,8 @@ window.oldmansoft.webapp = new (function () {
                     content.text(response.eq(1).text());
                 }
 
-                if (loadOption.refresh) setView(title, content);
-                else setOldView(link, data, type, title, content);
+                if (loadOption.refresh) setOldView(title, content);
+                else setView(link, data, type, title, content);
             });
             loadOption = { closed: null, loaded: null, link: link, data: data, type: type, refresh: false };
             return loadOption;
@@ -1471,6 +1488,13 @@ window.oldmansoft.webapp = new (function () {
 
                 if (jqXHR.status == 401) {
                     _fnOnUnauthorized(loadPath);
+                } else if (jqXHR.status == 0 && textStatus == "timeout") {
+                    var onLoadTimeoutResult = _fnOnLoadTimeout();
+                    if (onLoadTimeoutResult) {
+                        loadContentCompleted();
+                        setView(onLoadTimeoutResult);
+                        return;
+                    }
                 }
                 var response = $(jqXHR.responseText),
                     title = $("<h4></h4>").text(errorThrown),
@@ -1776,6 +1800,10 @@ window.oldmansoft.webapp = new (function () {
                 _fnOnUnauthorized = fn;
                 return this;
             }
+            this.loadTimeout = function (fn) {
+                _fnOnLoadTimeout = fn;
+                return this;
+            }
             this.dealLinkEmptyTarget = function (b) {
                 if (b == undefined) return _isDealLinkEmptyTarget;
                 _isDealLinkEmptyTarget = b;
@@ -1913,6 +1941,12 @@ window.oldmansoft.webapp = new (function () {
             }).fail(function (jqXHR, textStatus, errorThrown) {
                 if (jqXHR.status == 401) {
                     _fnOnUnauthorized(layoutLink);
+                } else if (jqXHR.status == 0 && textStatus == "timeout") {
+                    var onLoadTimeoutResult = _fnOnLoadTimeout();
+                    if (onLoadTimeoutResult) {
+                        $(layoutSelector).html(onLoadTimeoutResult).children().unwrap();
+                        return;
+                    }
                 }
                 $this.dialog.alert(_text.load_layout_error, errorThrown).ok(function () {
                     document.location.reload();
