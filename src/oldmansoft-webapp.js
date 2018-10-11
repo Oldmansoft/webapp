@@ -1,5 +1,5 @@
 ﻿/*
-* v0.26.98
+* v0.26.99
 * https://github.com/Oldmansoft/webapp
 * Copyright 2016 Oldmansoft, Inc; http://www.apache.org/licenses/LICENSE-2.0
 */
@@ -1669,7 +1669,7 @@ window.oldmansoft.webapp = new (function () {
     }
 
     this.dealScrollToVisibleLoading = function () {
-        var loading = $(".webapp-loading:visible"),
+        var loading = $(".webapp-loading:visible").first(),
 	        src;
 
         if (loading.length > 0 && !loading.data("work") && $(window).scrollTop() + $(window).height() > loading.offset().top) {
