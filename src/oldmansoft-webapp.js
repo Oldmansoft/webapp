@@ -1,5 +1,5 @@
 ﻿/*
-* v0.27.100
+* v0.27.101
 * https://github.com/Oldmansoft/webapp
 * Copyright 2016 Oldmansoft, Inc; http://www.apache.org/licenses/LICENSE-2.0
 */
@@ -1407,9 +1407,9 @@ window.oldmansoft.webapp = new (function () {
         }
 
         this.close = function (parameter, closeCompleted) {
-            var lastClosed = links.pop().getOption().closed;
             _windowBox.close(null, function () {
-                var current = links.last();
+                var lastClosed = links.pop().getOption().closed,
+                    current = links.last();
                 if (current) {
                     current.show();
                 } else {
