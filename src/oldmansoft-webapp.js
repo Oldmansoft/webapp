@@ -1,5 +1,5 @@
 ﻿/*
-* v0.27.104
+* v0.27.105
 * https://github.com/Oldmansoft/webapp
 * Copyright 2016 Oldmansoft, Inc; http://www.apache.org/licenses/LICENSE-2.0
 */
@@ -533,7 +533,7 @@ window.oldmansoft.webapp = new (function () {
             }
 
             this.remove = function () {
-                if (localViewEvent.inactive.execute(eventParameter) !== false) {
+                if (this.valid && localViewEvent.inactive.execute(eventParameter) !== false) {
                     _globalViewEvent.inactive.execute(eventParameter);
                 }
                 this.node.remove();
@@ -1223,20 +1223,24 @@ window.oldmansoft.webapp = new (function () {
                 else setView(link, data, type, content);
                 if (loadOption.loaded) loadOption.loaded();
             }).fail(function (jqXHR, textStatus, errorThrown) {
+                var onLoadTimeoutResult,
+                    response,
+                    title,
+                    content;
                 loading.hide();
                 if (jqXHR.status == 401) {
                     _fnOnUnauthorized(loadPath);
                 } else if (jqXHR.status == 0 && textStatus == "timeout") {
-                    var onLoadTimeoutResult = _fnOnLoadTimeout();
+                    onLoadTimeoutResult = _fnOnLoadTimeout();
                     if (onLoadTimeoutResult) {
                         if (loadOption.refresh) setOldView(onLoadTimeoutResult);
                         else setView(link, data, type, onLoadTimeoutResult);
                         return;
                     }
                 }
-                var response = $(jqXHR.responseText),
-                    title = $("<h4></h4>").text(errorThrown),
-                    content = $("<pre></pre>");
+                response = $(jqXHR.responseText);
+                title = $("<h4></h4>").text(errorThrown);
+                content = $("<pre></pre>");
 
                 if (response[11] != null && response[11].nodeType == 8) {
                     content.text(response[11].data);
@@ -1377,20 +1381,24 @@ window.oldmansoft.webapp = new (function () {
                 else setView(link, data, type, content);
                 if (loadOption.loaded) loadOption.loaded();
             }).fail(function (jqXHR, textStatus, errorThrown) {
+                var onLoadTimeoutResult,
+                    response,
+                    title,
+                    content;
                 loading.hide();
                 if (jqXHR.status == 401) {
                     _fnOnUnauthorized(loadPath);
                 } else if (jqXHR.status == 0 && textStatus == "timeout") {
-                    var onLoadTimeoutResult = _fnOnLoadTimeout();
+                    onLoadTimeoutResult = _fnOnLoadTimeout();
                     if (onLoadTimeoutResult) {
                         if (loadOption.refresh) setOldView(onLoadTimeoutResult);
                         else setView(link, data, type, onLoadTimeoutResult);
                         return;
                     }
                 }
-                var response = $(jqXHR.responseText),
-                    title = $("<h4></h4>").text(errorThrown),
-                    content = $("<pre></pre>");
+                response = $(jqXHR.responseText);
+                title = $("<h4></h4>").text(errorThrown);
+                content = $("<pre></pre>");
 
                 if (response[11] != null && response[11].nodeType == 8) {
                     content.text(response[11].data);
@@ -1518,6 +1526,10 @@ window.oldmansoft.webapp = new (function () {
                 setView(data);
                 if (loadCompleted) loadCompleted(true);
             }).fail(function (jqXHR, textStatus, errorThrown) {
+                var onLoadTimeoutResult,
+                    response,
+                    title,
+                    content;
                 if (currentId != loadId) {
                     return;
                 }
@@ -1526,16 +1538,16 @@ window.oldmansoft.webapp = new (function () {
                 if (jqXHR.status == 401) {
                     _fnOnUnauthorized(loadPath);
                 } else if (jqXHR.status == 0 && textStatus == "timeout") {
-                    var onLoadTimeoutResult = _fnOnLoadTimeout();
+                    onLoadTimeoutResult = _fnOnLoadTimeout();
                     if (onLoadTimeoutResult) {
                         loadContentCompleted();
                         setView(onLoadTimeoutResult);
                         return;
                     }
                 }
-                var response = $(jqXHR.responseText),
-                    title = $("<h4></h4>").text(errorThrown),
-                    content = $("<pre></pre>");
+                response = $(jqXHR.responseText);
+                title = $("<h4></h4>").text(errorThrown);
+                content = $("<pre></pre>");
 
                 if (response[11] != null && response[11].nodeType == 8) {
                     content.text(response[11].data);
@@ -1986,10 +1998,11 @@ window.oldmansoft.webapp = new (function () {
                     _mainView.load(link, $this.linker.callChangeCompleted);
                 });
             }).fail(function (jqXHR, textStatus, errorThrown) {
+                var onLoadTimeoutResult;
                 if (jqXHR.status == 401) {
                     _fnOnUnauthorized(layoutLink);
                 } else if (jqXHR.status == 0 && textStatus == "timeout") {
-                    var onLoadTimeoutResult = _fnOnLoadTimeout();
+                    onLoadTimeoutResult = _fnOnLoadTimeout();
                     if (onLoadTimeoutResult) {
                         $(layoutSelector).html(onLoadTimeoutResult).children().unwrap();
                         return;
