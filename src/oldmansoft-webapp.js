@@ -1,5 +1,5 @@
 ﻿/*
-* v0.27.102
+* v0.27.103
 * https://github.com/Oldmansoft/webapp
 * Copyright 2016 Oldmansoft, Inc; http://www.apache.org/licenses/LICENSE-2.0
 */
@@ -1705,9 +1705,14 @@ window.oldmansoft.webapp = new (function () {
         _activeView.get().reload();
     }
 
-    this.dealScrollToVisibleLoading = function () {
-        var loading = $(".webapp-loading:visible").first(),
+    this.dealScrollToVisibleLoading = function (rangeNode) {
+        var loading,
 	        src;
+        if (rangeNode) {
+            loading = rangeNode.find(".webapp-loading:visible").first();
+        } else {
+            loading = $(".webapp-loading:visible").first();
+        }
 
         if (loading.length > 0 && !loading.data("work") && $(window).scrollTop() + $(window).height() > loading.offset().top) {
             loading.data("work", true);
@@ -1719,7 +1724,7 @@ window.oldmansoft.webapp = new (function () {
                 loading.before(data);
                 loading.remove();
                 $this.resetWindowScrollbar();
-                $this.dealScrollToVisibleLoading();
+                $this.dealScrollToVisibleLoading(rangeNode);
             });
         }
     }
