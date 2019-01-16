@@ -1,5 +1,5 @@
 ﻿/*
-* v0.27.105
+* v0.27.106
 * https://github.com/Oldmansoft/webapp
 * Copyright 2016 Oldmansoft, Inc; http://www.apache.org/licenses/LICENSE-2.0
 */
@@ -47,12 +47,12 @@ window.oldmansoft.webapp = new (function () {
     function linkEncode(text) {
         if (!text) return "";
         if (text.indexOf("#") == 0) return text.substr(1, text.length - 1);
-        return text.replace(/\(/g, "(9)").replace(/\?/g, "(0)").replace(/\//g, "(1)").replace(/_/g, "(2)").replace(/#/g, "(3)");
+        return text.replace(/\(/g, "(9)").replace(/\?/g, "(0)").replace(/\//g, "(1)").replace(/_/g, "(2)").replace(/#/g, "(3)").replace(/&/g, "(4)");
     }
 
     function linkDecode(code) {
         if (!code) return "";
-        return code.replace(/\(0\)/g, "?").replace(/\(1\)/g, "/").replace(/\(2\)/g, "_").replace(/\(3\)/g, "#").replace(/\(9\)/g, "(");
+        return code.replace(/\(0\)/g, "?").replace(/\(1\)/g, "/").replace(/\(2\)/g, "_").replace(/\(3\)/g, "#").replace(/\(4\)/g, "&").replace(/\(9\)/g, "(");
     }
 
     function linkDecode_tilde(code) {
