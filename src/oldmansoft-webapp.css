@@ -37,7 +37,11 @@
     -moz-border-radius: 5px;
     border-radius: 5px;
 }
-
+.box-background>.layout-horizontal {
+    max-width: -webkit-calc(100% - 20px); 
+    max-width: -moz-calc(100% - 20px); 
+    max-width: calc(100% - 20px); 
+}
 .window-background {
     z-index: 2000;
 }
@@ -50,7 +54,6 @@
 .dialog-background {
     z-index: 2003;
 }
-
 .dialog-box {
     text-align: center;
 }
@@ -62,9 +65,6 @@
 }
 .dialog-body {
     padding: 15px;
-}
-.dialog-body p {
-    margin: 0 0 5px 0;
 }
 .dialog-footer {
     padding: 15px;
