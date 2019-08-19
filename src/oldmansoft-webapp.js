@@ -1,5 +1,5 @@
 ﻿/*
-* v0.27.107
+* v0.28.108
 * https://github.com/Oldmansoft/webapp
 * Copyright 2016 Oldmansoft, Inc; http://www.apache.org/licenses/LICENSE-2.0
 */
@@ -889,9 +889,9 @@ window.oldmansoft.webapp = new (function () {
                 var footer = $("<div></div>").addClass("dialog-footer");
 
                 function option(node) {
-                    this.set = function (text) {
+                    this.set = function (text, className) {
                         var closeCallback,
-                            button = $("<button></button>").text(text);
+                            button = $("<button></button>").text(text).addClass(className);
 
                         button.click(function (event) {
                             _messageBox.close(event, function () {
@@ -940,7 +940,7 @@ window.oldmansoft.webapp = new (function () {
                 builder.setHead(title);
             }
             builder.setBody(content);
-            okButton = builder.setFooter().set(_text.ok);
+            okButton = builder.setFooter().set(_text.ok, "ok");
             if (fn) {
                 console.warn("fn is obsolete. commend use ok");
                 okButton.setCallback(fn);
@@ -984,12 +984,12 @@ window.oldmansoft.webapp = new (function () {
             }
             builder.setBody(content);
             footer = builder.setFooter();
-            yesButton = footer.set(_text.yes, fnYes);
+            yesButton = footer.set(_text.yes, "yes");
             if (fnYes) {
                 console.warn("fnYes is obsolete.");
                 yesButton.setCallback(fnYes);
             }
-            noButton = footer.set(_text.no, fnNo);
+            noButton = footer.set(_text.no, "no");
             if (fnNo) {
                 console.warn("fnNo is obsolete.");
                 noButton.setCallback(fnNo);
