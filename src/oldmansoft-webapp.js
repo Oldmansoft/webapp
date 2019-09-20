@@ -1,5 +1,5 @@
 ﻿/*
-* v0.28.108
+* v0.28.109
 * https://github.com/Oldmansoft/webapp
 * Copyright 2016 Oldmansoft, Inc; http://www.apache.org/licenses/LICENSE-2.0
 */
@@ -36,7 +36,6 @@ window.oldmansoft.webapp = new (function () {
     _scrollbar = [],
     _canTouch = null,
     _globalViewEvent = null,
-    _dealHrefTarget,
     _messageBox,
     _windowBox,
     _modalBox,
@@ -1763,7 +1762,7 @@ window.oldmansoft.webapp = new (function () {
         }
     }
 
-    _dealHrefTarget = {
+    this.dealHrefTarget = {
         // Obsolete(_link)
         _base: function (href) {
             $this.linker.link(href);
@@ -1786,7 +1785,7 @@ window.oldmansoft.webapp = new (function () {
     }
 
     this.configTarget = function (fn) {
-        if (typeof fn == "function") fn(_dealHrefTarget);
+        if (typeof fn == "function") fn($this.dealHrefTarget);
     }
 
     this.hashes = function () {
@@ -1907,15 +1906,15 @@ window.oldmansoft.webapp = new (function () {
                     return;
                 }
                 e.preventDefault();
-                _dealHrefTarget._link(href);
+                $this.dealHrefTarget._link(href);
                 return;
             }
             if (target == "_none") {
                 return;
             }
-            if (_dealHrefTarget[target]) {
+            if ($this.dealHrefTarget[target]) {
                 e.preventDefault();
-                _dealHrefTarget[target](href, $(this));
+                $this.dealHrefTarget[target](href, $(this));
             }
         });
         $(document).on("click", ".webapp-close", function (e) {
@@ -2026,12 +2025,6 @@ window.oldmansoft.webapp = new (function () {
         loading: $this.loadingTip.show,
         loadScript: $this.scriptLoader.load,
         hash: $this.linker.hash,
-        // Obsolete(link)
-        baseHash: $this.linker.hash,
-        // Obsolete(add)
-        addHash: $this.linker.add,
-        // Obsolete(same)
-        sameHash: $this.linker.same,
         link: $this.linker.link,
         add: $this.linker.add,
         same: $this.linker.same,
