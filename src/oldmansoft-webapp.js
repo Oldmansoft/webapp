@@ -1,5 +1,5 @@
 ﻿/*
-* v0.28.109
+* v0.28.110
 * https://github.com/Oldmansoft/webapp
 * Copyright 2016 Oldmansoft, Inc; http://www.apache.org/licenses/LICENSE-2.0
 */
@@ -1155,7 +1155,7 @@ window.oldmansoft.webapp = new (function () {
                 _activeView.push(_modalView);
             }
 
-            links.push("modal", link, { closed: loadOption.closed, data: data, type: type });
+            links.push("modal", link, { closed: loadOption.closed, closedParameters: loadOption.closedParameters, data: data, type: type });
             last = links.last();
             last.node.addClass("box-panel");
             if (second == undefined) {
@@ -1251,7 +1251,7 @@ window.oldmansoft.webapp = new (function () {
                 if (loadOption.refresh) setOldView(title, content);
                 else setView(link, data, type, title, content);
             });
-            loadOption = { closed: null, loaded: null, link: link, data: data, type: type, refresh: false };
+            loadOption = { closed: null, closedParameters: null, loaded: null, link: link, data: data, type: type, refresh: false };
             return loadOption;
         }
 
@@ -1262,13 +1262,19 @@ window.oldmansoft.webapp = new (function () {
         }
 
         this.close = function (parameter, closeCompleted) {
-            var lastClosed = links.pop().getOption().closed;
+            var option = links.pop().getOption();
             _modalBox.close(null, function () {
                 var current = links.last();
                 if (!current) {
                     _activeView.pop();
                 }
-                if (lastClosed) lastClosed(parameter);
+                if (option.closed) {
+                    if (option.closedParameters != null) {
+                        if (parameter) option.closedParameters.unshift(parameter);
+                        option.closed.apply(null, option.closedParameters);
+                    }
+                    option.closed(parameter);
+                }
                 if (closeCompleted) closeCompleted(false);
             });
         }
@@ -1312,7 +1318,7 @@ window.oldmansoft.webapp = new (function () {
                 _activeView.push(_openView);
             }
 
-            links.push("open", link, { closed: loadOption.closed, data: data, type: type });
+            links.push("open", link, { closed: loadOption.closed, closedParameters: loadOption.closedParameters, data: data, type: type });
             last = links.last();
             if (second == undefined) {
                 last.setContext(first);
@@ -1409,7 +1415,7 @@ window.oldmansoft.webapp = new (function () {
                 if (loadOption.refresh) setOldView(title, content);
                 else setView(link, data, type, title, content);
             });
-            loadOption = { closed: null, loaded: null, link: link, data: data, type: type, refresh: false };
+            loadOption = { closed: null, closedParameters: null, loaded: null, link: link, data: data, type: type, refresh: false };
             return loadOption;
         }
 
@@ -1421,7 +1427,7 @@ window.oldmansoft.webapp = new (function () {
 
         this.close = function (parameter, closeCompleted) {
             _windowBox.close(null, function () {
-                var lastClosed = links.pop().getOption().closed,
+                var option = links.pop().getOption(),
                     current = links.last();
                 if (current) {
                     current.show();
@@ -1429,7 +1435,13 @@ window.oldmansoft.webapp = new (function () {
                     _activeView.pop();
                     _mainView.activeCurrent();
                 }
-                if (lastClosed) lastClosed(parameter);
+                if (option.closed) {
+                    if (option.closedParameters != null) {
+                        if (parameter) option.closedParameters.unshift(parameter);
+                        option.closed.apply(null, option.closedParameters);
+                    }
+                    option.closed(parameter);
+                }
                 if (closeCompleted) closeCompleted(false);
             });
         }
@@ -1802,6 +1814,12 @@ window.oldmansoft.webapp = new (function () {
         return new function () {
             this.closed = function (fn) {
                 option.closed = fn;
+                if (arguments.length > 1) {
+                    option.closedParameters = [];
+                    for (var i = 1; i < arguments.length; i++) {
+                        option.closedParameters.push(arguments[i]);
+                    }
+                }
             }
             this.loaded = function (fn) {
                 option.loaded = fn;
@@ -1819,6 +1837,12 @@ window.oldmansoft.webapp = new (function () {
         return new function () {
             this.closed = function (fn) {
                 option.closed = fn;
+                if (arguments.length > 1) {
+                    option.closedParameters = [];
+                    for (var i = 1; i < arguments.length; i++) {
+                        option.closedParameters.push(arguments[i]);
+                    }
+                }
             }
             this.loaded = function (fn) {
                 option.loaded = fn;
