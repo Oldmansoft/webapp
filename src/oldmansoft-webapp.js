@@ -1,5 +1,5 @@
 ﻿/*
-* v0.28.110
+* v0.28.111
 * https://github.com/Oldmansoft/webapp
 * Copyright 2016 Oldmansoft, Inc; http://www.apache.org/licenses/LICENSE-2.0
 */
@@ -1081,6 +1081,12 @@ window.oldmansoft.webapp = new (function () {
             changeCompleted = null;
         }
 
+        this.createHref = function (href) {
+            var hash = new linkParser(href).getContent(),
+                base = document.location.origin + document.location.pathname;
+            if (hash == "") return base;
+            return base + "#" + hash;
+        }
         this.modify = function (href) {
             window.location.hash = href;
             lastHash = new linkParser(href).getContent();
@@ -2048,6 +2054,7 @@ window.oldmansoft.webapp = new (function () {
         message: $this.dialog.message,
         loading: $this.loadingTip.show,
         loadScript: $this.scriptLoader.load,
+        href: $this.linker.createHref,
         hash: $this.linker.hash,
         link: $this.linker.link,
         add: $this.linker.add,
