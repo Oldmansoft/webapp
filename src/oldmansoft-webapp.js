@@ -1,5 +1,5 @@
 ﻿/*
-* v0.28.111
+* v0.29.112
 * https://github.com/Oldmansoft/webapp
 * Copyright 2016 Oldmansoft, Inc; http://www.apache.org/licenses/LICENSE-2.0
 */
@@ -701,9 +701,8 @@ window.oldmansoft.webapp = new (function () {
             isInit = true;
             element = $("<div></div>").addClass(className).addClass("box-background");
             if (isMiddle) {
-                core = $("<div></div>").addClass("layout-horizontal")
-                element.append(core);
-                element.append($("<div></div>").addClass("layout-vertical"));
+                core = $("<div></div>").addClass("layout-center-content");
+                element.append($("<div></div>").addClass("layout-center").append(core));
             } else {
                 core = element;
             }
@@ -817,10 +816,9 @@ window.oldmansoft.webapp = new (function () {
                 main;
 
             container = $("<div></div>").addClass("modal-background").addClass("box-background");
-            main = $("<div></div>").addClass("layout-horizontal")
+            main = $("<div></div>").addClass("layout-center-content")
             main.append(node);
-            container.append(main);
-            container.append($("<div></div>").addClass("layout-vertical"));
+            container.append($("<div></div>").addClass("layout-center").append(main));
             container.appendTo(element);
             container.on("click", function (e) {
                 if (e.currentTarget != e.target) {
@@ -1023,7 +1021,7 @@ window.oldmansoft.webapp = new (function () {
                 text = $("<span></span>").text(_text.loading);
 
             dialog.append(text);
-            element.append($("<div></div>").addClass("layout-horizontal").append(dialog)).append($("<div></div>").addClass("layout-vertical"));
+            element.append($("<div></div>").addClass("layout-center").append($("<div></div>").addClass("layout-center-content").append(dialog)));
             element.prependTo($("body"));
         }
         this.show = function () {

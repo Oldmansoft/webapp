@@ -13,6 +13,27 @@
     position: relative;
     right: 50%;
 }
+
+.layout-center {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.layout-center>.layout-center-content {
+    display: initial;
+}
+.box-background>.layout-center>.layout-center-content {
+    max-width: -webkit-calc(100% - 20px); 
+    max-width: -moz-calc(100% - 20px); 
+    max-width: calc(100% - 20px); 
+}
 .layout-expanded {
     overflow: hidden;
 }
