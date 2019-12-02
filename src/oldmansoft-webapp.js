@@ -1,5 +1,5 @@
 ﻿/*
-* v0.29.112
+* v0.29.113
 * https://github.com/Oldmansoft/webapp
 * Copyright 2016 Oldmansoft, Inc; http://www.apache.org/licenses/LICENSE-2.0
 */
@@ -821,7 +821,7 @@ window.oldmansoft.webapp = new (function () {
             container.append($("<div></div>").addClass("layout-center").append(main));
             container.appendTo(element);
             container.on("click", function (e) {
-                if (e.currentTarget != e.target) {
+                if (e.currentTarget != e.target && e.currentTarget != e.target.parentElement) {
                     return;
                 }
                 _modalView.close();
