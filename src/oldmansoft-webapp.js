@@ -1,5 +1,5 @@
 ﻿/*
-* v0.30.115
+* v0.31.116
 * https://github.com/Oldmansoft/webapp
 * Copyright 2016 Oldmansoft, Inc; http://www.apache.org/licenses/LICENSE-2.0
 */
@@ -41,6 +41,7 @@ window.oldmansoft.webapp = new (function () {
     _windowBox,
     _modalBox,
     _canSetup = true,
+    _initialledEvents = [],
     _initialization_option,
     _hideMainViewFirstLoading = false;
 
@@ -1884,6 +1885,11 @@ window.oldmansoft.webapp = new (function () {
         return _initialization_option;
     }
 
+    this.initialled = function (fn) {
+        if (typeof fn != "function") return;
+        _initialledEvents.push(fn);
+    }
+
     this.initialization = function (viewNodeSelector, defaultLink) {
         function option(main) {
             this.viewNode = function (nodeSelector) {
@@ -1973,6 +1979,9 @@ window.oldmansoft.webapp = new (function () {
         _modalViewArea = new modalViewArea();
         _activeViewAreaManager.push(_mainViewArea);
         _initialization_option = new option(_mainViewArea);
+        for (var i in _initialledEvents) {
+            _initialledEvents[i]();
+        }
         return _initialization_option;
     }
 
