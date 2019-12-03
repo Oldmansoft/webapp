@@ -1,5 +1,5 @@
 ﻿/*
-* v0.30.114
+* v0.30.115
 * https://github.com/Oldmansoft/webapp
 * Copyright 2016 Oldmansoft, Inc; http://www.apache.org/licenses/LICENSE-2.0
 */
@@ -31,6 +31,7 @@ window.oldmansoft.webapp = new (function () {
     },
     _currentViewEvent = null,
     _isDealLinkEmptyTarget = true,
+    _dealHrefTarget,
     _isReplacePCScrollBar = true,
     _WindowScrollBar = null,
     _scrollbar = [],
@@ -1792,8 +1793,7 @@ window.oldmansoft.webapp = new (function () {
         }
     }
 
-    this.dealHrefTarget = {
-        // Obsolete(_link)
+    _dealHrefTarget = {
         _base: function (href) {
             $this.linker.link(href);
         },
@@ -1815,7 +1815,7 @@ window.oldmansoft.webapp = new (function () {
     }
 
     this.configTarget = function (fn) {
-        if (typeof fn == "function") fn($this.dealHrefTarget);
+        if (typeof fn == "function") fn(_dealHrefTarget);
     }
 
     this.hashes = function () {
@@ -1948,15 +1948,15 @@ window.oldmansoft.webapp = new (function () {
                     return;
                 }
                 e.preventDefault();
-                $this.dealHrefTarget._link(href);
+                _dealHrefTarget._link(href);
                 return;
             }
             if (target == "_none") {
                 return;
             }
-            if ($this.dealHrefTarget[target]) {
+            if (_dealHrefTarget[target]) {
                 e.preventDefault();
-                $this.dealHrefTarget[target](href, $(this));
+                _dealHrefTarget[target](href, $(this));
             }
         });
         $(document).on("click", ".webapp-close", function (e) {
