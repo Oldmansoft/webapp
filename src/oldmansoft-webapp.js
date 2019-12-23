@@ -1,5 +1,5 @@
 ﻿/*
-* v0.31.117
+* v0.32.118
 * https://github.com/Oldmansoft/webapp
 * Copyright 2016 Oldmansoft, Inc; http://www.apache.org/licenses/LICENSE-2.0
 */
@@ -826,6 +826,9 @@ window.oldmansoft.webapp = new (function () {
                 if (e.currentTarget != e.target && e.currentTarget != e.target.parentElement) {
                     return;
                 }
+                if ($(e.currentTarget).find(".force").length > 0) {
+                    return;
+                }
                 _modalViewArea.close();
             });
             return container;
@@ -1167,6 +1170,7 @@ window.oldmansoft.webapp = new (function () {
             links.push("modal", link, { closed: loadOption.closed, closedParameters: loadOption.closedParameters, data: data, type: type });
             last = links.last();
             last.node.addClass("box-panel");
+            if (loadOption.force) last.node.addClass("force");
             if (second == undefined) {
                 last.setContext(first);
             } else {
@@ -1260,7 +1264,7 @@ window.oldmansoft.webapp = new (function () {
                 if (loadOption.refresh) setOldView(title, content);
                 else setView(link, data, type, title, content);
             });
-            loadOption = { closed: null, closedParameters: null, loaded: null, refresh: false };
+            loadOption = { closed: null, closedParameters: null, loaded: null, refresh: false, force: false };
             return loadOption;
         }
 
@@ -1865,6 +1869,9 @@ window.oldmansoft.webapp = new (function () {
             }
             this.loaded = function (fn) {
                 option.loaded = fn;
+            }
+            this.force = function (b) {
+                option.force = b;
             }
         }
     }
