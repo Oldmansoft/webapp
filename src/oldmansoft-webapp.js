@@ -1,5 +1,5 @@
 ﻿/*
-* v0.31.116
+* v0.31.117
 * https://github.com/Oldmansoft/webapp
 * Copyright 2016 Oldmansoft, Inc; http://www.apache.org/licenses/LICENSE-2.0
 */
@@ -1260,7 +1260,7 @@ window.oldmansoft.webapp = new (function () {
                 if (loadOption.refresh) setOldView(title, content);
                 else setView(link, data, type, title, content);
             });
-            loadOption = { closed: null, closedParameters: null, loaded: null, link: link, data: data, type: type, refresh: false };
+            loadOption = { closed: null, closedParameters: null, loaded: null, refresh: false };
             return loadOption;
         }
 
@@ -1427,7 +1427,7 @@ window.oldmansoft.webapp = new (function () {
                 if (loadOption.refresh) setOldView(title, content);
                 else setView(link, data, type, title, content);
             });
-            loadOption = { closed: null, closedParameters: null, loaded: null, link: link, data: data, type: type, refresh: false };
+            loadOption = { closed: null, closedParameters: null, loaded: null, refresh: false };
             return loadOption;
         }
 
