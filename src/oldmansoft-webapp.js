@@ -1,5 +1,5 @@
 ﻿/*
-* v0.32.118
+* v0.33.119
 * https://github.com/Oldmansoft/webapp
 * Copyright 2016 Oldmansoft, Inc; http://www.apache.org/licenses/LICENSE-2.0
 */
@@ -30,13 +30,14 @@ window.oldmansoft.webapp = new (function () {
         return false;
     },
     _currentViewEvent = null,
+    _globalViewEvent = null,
+    _visibleLoadingCompleted = [],
     _isDealLinkEmptyTarget = true,
     _dealHrefTarget,
     _isReplacePCScrollBar = true,
     _WindowScrollBar = null,
     _scrollbar = [],
     _canTouch = null,
-    _globalViewEvent = null,
     _messageBox,
     _windowBox,
     _modalBox,
@@ -1771,6 +1772,9 @@ window.oldmansoft.webapp = new (function () {
             $.get(src, function (data) {
                 loading.before(data);
                 loading.remove();
+                for (var i = 0; i < _visibleLoadingCompleted.length; i++) {
+                    if (_visibleLoadingCompleted[i]() === false) return false;
+                }
                 $this.resetWindowScrollbar();
                 $this.dealScrollToVisibleLoading(rangeNode);
             });
@@ -1940,6 +1944,11 @@ window.oldmansoft.webapp = new (function () {
             }
             this.viewUnloaded = function (fn) {
                 _globalViewEvent.unload.add(fn);
+                return this;
+            }
+            this.visibleLoadingCompleted = function (fn) {
+                if (typeof (fn) != "function") throw new Error("fn is not a function");
+                _visibleLoadingCompleted.push(fn);
                 return this;
             }
         }
