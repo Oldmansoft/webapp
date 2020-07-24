@@ -1,5 +1,5 @@
 ﻿/*
-* v0.34.120
+* v0.34.121
 * https://github.com/Oldmansoft/webapp
 * Copyright 2016 Oldmansoft, Inc; http://www.apache.org/licenses/LICENSE-2.0
 */
@@ -520,7 +520,7 @@ window.oldmansoft.webapp = new (function () {
                 if (localViewEvent.load.execute(eventParameter) !== false) {
                     _globalViewEvent.load.execute(eventParameter);
                 }
-                if (localViewEvent.active.execute(eventParameter) !== false) {
+                if (localViewEvent && localViewEvent.active.execute(eventParameter) !== false) {
                     _globalViewEvent.active.execute(eventParameter);
                 }
             }
@@ -529,7 +529,7 @@ window.oldmansoft.webapp = new (function () {
                 if (localViewEvent.inactive.execute(eventParameter) !== false) {
                     _globalViewEvent.inactive.execute(eventParameter);
                 }
-                if (localViewEvent.unload.execute(eventParameter) !== false) {
+                if (localViewEvent && localViewEvent.unload.execute(eventParameter) !== false) {
                     _globalViewEvent.unload.execute(eventParameter);
                 }
             }
