@@ -1,4 +1,4 @@
-﻿/* version 0.2.8 */
+﻿/* version 0.2.9 */
 oldmansoft.webapp.extend = {};
 oldmansoft.webapp.extend.form_verify = function (form) {
 	function checkReady() {
@@ -422,6 +422,8 @@ oldmansoft.webapp.initialled(function () {
 			}
 	    });
 
-	    oldmansoft.webapp.extend.form_verify(view.node.find("form"));
+	    view.node.find("form").each(function () {
+	        oldmansoft.webapp.extend.form_verify($(this));
+	    });
 	});
 });
