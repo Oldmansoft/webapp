@@ -1,5 +1,5 @@
 ﻿/*
-* v0.34.121
+* v0.34.122
 * https://github.com/Oldmansoft/webapp
 * Copyright 2016 Oldmansoft, Inc; http://www.apache.org/licenses/LICENSE-2.0
 */
@@ -1861,6 +1861,10 @@ window.oldmansoft.webapp = new (function () {
 
     this.configTarget = function (fn) {
         if (typeof fn == "function") fn(_dealHrefTarget);
+    }
+
+    this.getDealHrefTarget = function () {
+        return _dealHrefTarget;
     }
 
     this.hashes = function () {
