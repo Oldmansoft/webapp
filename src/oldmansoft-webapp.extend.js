@@ -1,4 +1,4 @@
-﻿/* version 0.2.10 */
+﻿/* version 0.2.11 */
 oldmansoft.webapp.extend = {};
 oldmansoft.webapp.extend.form_verify = function (form) {
 	function checkReady() {
@@ -325,45 +325,42 @@ jQuery.fn.extend({
 		function render(dataUrl, file, element, message, width, height, deal) {
 			var image = new Image();
 			image.onload = function () {
-				var canvas = document.createElement("canvas"),
-                    ctx;
+				var canvas,
+                    ctx,
+				    blob;
 
-				if (image.width < width && image.height < height) {
+				if (image.width <= width && image.height <= height) {
+				    blob = file;
+				} else {
+				    canvas = document.createElement("canvas");
 				    ctx = canvas.getContext("2d");
-				    canvas.width = image.width;
-				    canvas.height = image.height;
-				    ctx.drawImage(image, 0, 0, image.width, image.height);
-				} else if (deal == "cut") {
-				    if (image.width <= image.height && image.width > width) {
-				        image.height *= width / image.width;
-				        image.width = width;
-				    } else if (image.width >= image.height && image.height > height) {
-				        image.width *= height / image.height;
-				        image.height = height;
+				    if (deal == "cut") {
+				        if (image.width <= image.height && image.width > width) {
+				            image.height *= width / image.width;
+				            image.width = width;
+				        } else if (image.width >= image.height && image.height > height) {
+				            image.width *= height / image.height;
+				            image.height = height;
+				        }
+				        canvas.width = image.width > width ? width : image.width;
+				        canvas.height = image.height > height ? height : image.height;
+				    } else {
+				        if (image.width >= image.height && image.width > width) {
+				            image.height *= width / image.width;
+				            image.width = width;
+				        } else if (image.width <= image.height && image.height > height) {
+				            image.width *= height / image.height;
+				            image.height = height;
+				        }
+				        canvas.width = image.width;
+				        canvas.height = image.height;
 				    }
-				    ctx = canvas.getContext("2d");
-				    canvas.width = image.width > width ? width : image.width;
-				    canvas.height = image.height > height ? height : image.height;
 				    ctx.drawImage(image, 0, 0, image.width, image.height);
-				} else {
-					if (image.width >= image.height && image.width > width) {
-						image.height *= width / image.width;
-						image.width = width;
-					} else if (image.width <= image.height && image.height > height) {
-						image.width *= height / image.height;
-						image.height = height;
-					}
-					ctx = canvas.getContext("2d");
-					canvas.width = image.width;
-					canvas.height = image.height;
-					ctx.drawImage(image, 0, 0, image.width, image.height);
+				    blob = file.type == "image/jpeg" ? dataURL2Blob(canvas.toDataURL("image/jpeg", 0.95)) : dataURL2Blob(canvas.toDataURL(file.type));
 				}
+
 				if (!$(element).data("images")) $(element).data("images", []);
-				if (file.type == "image/jpeg") {
-				    $(element).data("images").push(dataURL2Blob(canvas.toDataURL("image/jpeg", 0.95)));
-				} else {
-				    $(element).data("images").push(dataURL2Blob(canvas.toDataURL(file.type)));
-				}
+				$(element).data("images").push(blob);
 				completed(element, file, message);
 			};
 			image.src = dataUrl;
@@ -387,15 +384,15 @@ jQuery.fn.extend({
 
 		if (width && height) {
 			this.on("change", function () {
+			    $(this).data("images", null);
+			    $(this).data("done", 0);
 			    if (start) start();
 			    $(this).trigger("dealing");
 				if (this.files.length == 0) {
-				    $(this).data("images", null);
 					if (finish) finish(null);
 					$(element).trigger("dealt");
 					return;
 				}
-				$(this).data("done", 0);
 				var message = $app.message("图片处理中")
 				for (var i = 0; i < this.files.length; i++) {
 				    loadImage(this.files[i], this, message, Number(width), Number(height), deal);
