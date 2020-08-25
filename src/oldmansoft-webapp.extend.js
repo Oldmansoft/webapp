@@ -1,4 +1,4 @@
-﻿/* version 0.2.11 */
+﻿/* version 0.2.12 */
 oldmansoft.webapp.extend = {};
 oldmansoft.webapp.extend.form_verify = function (form) {
 	function checkReady() {
@@ -251,19 +251,22 @@ oldmansoft.webapp.extend.form_auto_submit = function() {
 	}
 
 	function submitForm() {
-		var loading = $app.loading(),
+		var loading,
             submit = null;
 		if (form.attr("data-script")) {
-			submit = eval(form.attr("data-script"));
+		    submit = eval(form.attr("data-script"));
+		    return;
 		} else if (!form.attr("method") || form.attr("method").toLowerCase() != "post") {
 			FormGetSubmit(form);
 			return;
-		} else if (form.hasClass("image-deal")) {
+		}
+
+		loading = $app.loading();
+		if (form.hasClass("image-deal")) {
 			submit = ImageDealSubmit(form);
 		} else {
 			submit = form.ajaxSubmit().data("jqxhr");
 		}
-		if (!submit) return;
 		submit.done(function (service) {
 			loading.hide();
 			result = service;
