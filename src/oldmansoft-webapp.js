@@ -1,5 +1,5 @@
 ﻿/*
-* v0.34.122
+* v0.34.123
 * https://github.com/Oldmansoft/webapp
 * Copyright 2016 Oldmansoft, Inc; http://www.apache.org/licenses/LICENSE-2.0
 */
@@ -674,7 +674,7 @@ window.oldmansoft.webapp = new (function () {
             }
 
             element.stop(true);
-            element.fadeOut(store.length > 0 ? 0 : 200, function () {
+            element.fadeOut(store.length > 0 ? 1 : 200, function () {
                 $this.bodyManagement.shrink();
                 if (current == null) {
                     if (fn) fn();
@@ -783,7 +783,7 @@ window.oldmansoft.webapp = new (function () {
             }
 
             current.node.stop(true);
-            current.node.fadeOut(store.length > 0 ? 0 : 200, function () {
+            current.node.fadeOut(store.length > 0 ? 1 : 200, function () {
                 $this.bodyManagement.shrink();
                 if (current == null) {
                     if (fn) fn();
