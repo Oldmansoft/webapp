@@ -1,4 +1,4 @@
-﻿/* version 0.2.12 */
+﻿/* version 0.2.13 */
 oldmansoft.webapp.extend = {};
 oldmansoft.webapp.extend.form_verify = function (form) {
 	function checkReady() {
@@ -9,24 +9,32 @@ oldmansoft.webapp.extend.form_verify = function (form) {
                 verify = $input.attr("data-verify");
 			if (!verify) return;
 			if (verify.indexOf("required") > -1) {
-				if ($input.attr("type") == "radio" || $input.attr("type") == "checkbox") {
+			    if ($input.attr("type") == "radio" || $input.attr("type") == "checkbox") {
+			        if (checkedInput[$input.attr("name")] == undefined) {
+			            checkedInput[$input.attr("name")] = { list: [], valid: false };
+			        }
+
 					if ($input.prop("checked")) {
-					    checkedInput[$input.attr("name")] = true;
-					} else if (checkedInput[$input.attr("name")] == undefined) {
-					    checkedInput[$input.attr("name")] = false;
+					    checkedInput[$input.attr("name")].valid = true;
 					}
+					checkedInput[$input.attr("name")].list.push($input);
 				} else if ($.trim($input.val()) == "") {
 					valid = false;
 					return false;
 				}
 			}
 		});
-		for (var item in checkedInput) {
-		    if (checkedInput[item] == false) {
-				valid = false;
-				form.find("input[name=" + item + "]").parent().addClass("verify-invalid");
+		for (var name in checkedInput) {
+		    var obj = checkedInput[name];
+		    if (obj.valid == false) {
+		        valid = false;
+		        for (var j = 0; j < obj.list.length; j++) {
+		            obj.list[j].parent().addClass("verify-invalid");
+		        }
 		    } else {
-		        form.find("input[name=" + item + "]").parent().removeClass("verify-invalid");
+		        for (var j = 0; j < obj.list.length; j++) {
+		            obj.list[j].parent().removeClass("verify-invalid");
+		        }
 		    }
 		}
 
