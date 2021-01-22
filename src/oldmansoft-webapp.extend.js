@@ -196,8 +196,8 @@ oldmansoft.webapp.extend.form_auto_submit = function() {
 	        if (!$this.attr("name")) return;
 	        if ($this.prop("readonly") || $this.prop("disabled")) return;
 	        if ($this.data("images")) {
-	            for (var i = 0; i < $this.get(0).files.length; i++) {
-	                formData.append($this.attr("name"), $this.data("images")[i], $this.get(0).files[i].name);
+	            for (var i = 0; i < $this.data("images").length; i++) {
+	                formData.append($this.attr("name"), $this.data("images")[i].blob, $this.data("images")[i].name);
 	            }
 	        } else {
 	            if ($this.get(0).files.length == 0) {
@@ -324,9 +324,7 @@ jQuery.fn.extend({
 		}
 
 		function completed(element, file, message) {
-		    var done = $(element).data("done") + 1;
-		    $(element).data("done", done);
-		    if (done == element.files.length) {
+		    if ($(element).data("images").length == element.files.length) {
 		        message.close();
 		        if (finish) finish(file);
 		        $(element).trigger("dealt");
@@ -371,7 +369,7 @@ jQuery.fn.extend({
 				}
 
 				if (!$(element).data("images")) $(element).data("images", []);
-				$(element).data("images").push(blob);
+				$(element).data("images").push({ blob: blob, name: file.name });
 				completed(element, file, message);
 			};
 			image.src = dataUrl;
@@ -394,9 +392,9 @@ jQuery.fn.extend({
             deal = this.attr("data-deal");
 
 		if (width && height) {
-			this.on("change", function () {
+		    this.on("change", function () {
+		        $(this).parentsUntil("body", "form").addClass("image-deal");
 			    $(this).data("images", null);
-			    $(this).data("done", 0);
 			    if (start) start();
 			    $(this).trigger("dealing");
 				if (this.files.length == 0) {
@@ -421,7 +419,6 @@ oldmansoft.webapp.initialled(function () {
 	    view.node.find("form.auto input[type=file][data-width][data-height]").each(function () {
 			var $this = $(this);
 			$this.imageDeal(function (file) {
-			    $this.parentsUntil("body", "form").addClass("image-deal");
 			    if ($this.hasClass("file-input")) $this.next().text(file == null ? "" : file.name);
 			}).on("dealing", function () {
 			    if ($this.hasClass("file-input")) $this.next().text("处理中...");

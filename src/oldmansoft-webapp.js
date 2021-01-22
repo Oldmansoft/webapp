@@ -1,5 +1,5 @@
 ﻿/*
-* v0.34.122
+* v0.35.124
 * https://github.com/Oldmansoft/webapp
 * Copyright 2016 Oldmansoft, Inc; http://www.apache.org/licenses/LICENSE-2.0
 */
@@ -674,7 +674,7 @@ window.oldmansoft.webapp = new (function () {
             }
 
             element.stop(true);
-            element.fadeOut(store.length > 0 ? 0 : 200, function () {
+            element.fadeOut(store.length > 0 ? 1 : 200, function () {
                 $this.bodyManagement.shrink();
                 if (current == null) {
                     if (fn) fn();
@@ -783,7 +783,7 @@ window.oldmansoft.webapp = new (function () {
             }
 
             current.node.stop(true);
-            current.node.fadeOut(store.length > 0 ? 0 : 200, function () {
+            current.node.fadeOut(store.length > 0 ? 1 : 200, function () {
                 $this.bodyManagement.shrink();
                 if (current == null) {
                     if (fn) fn();
@@ -1313,11 +1313,15 @@ window.oldmansoft.webapp = new (function () {
         }
 
         this.replace = function (link, data) {
-            var last = links.last();
-            last.callInactiveAndUnload();
+            var last = links.last(),
+                linkOption = last.getOption(),
+                option;
+            last.node.data("link", link);
             last.link = link;
-            last.setContext(data);
-            last.callLoadAndActive();
+            linkOption.data = data;
+            linkOption.type = data ? "POST" : "GET";
+            option = this.load(link, linkOption.data, linkOption.type);
+            option.refresh = true;
         }
 
         this.clear = function () {
@@ -1488,11 +1492,15 @@ window.oldmansoft.webapp = new (function () {
         }
 
         this.replace = function (link, data) {
-            var last = links.last();
-            last.callInactiveAndUnload();
+            var last = links.last(),
+                linkOption = last.getOption(),
+                option;
+            last.node.data("link", link);
             last.link = link;
-            last.setContext(data);
-            last.callLoadAndActive();
+            linkOption.data = data;
+            linkOption.type = data ? "POST" : "GET";
+            option = this.load(link, linkOption.data, linkOption.type);
+            option.refresh = true;
         }
 
         this.clear = function () {
@@ -1705,12 +1713,8 @@ window.oldmansoft.webapp = new (function () {
             }
         }
 
-        this.replace = function (link, data) {
-            var last = links.last();
-            last.callInactiveAndUnload();
-            last.link = link;
-            last.setContext(data);
-            last.callLoadAndActive();
+        this.replace = function (link) {
+            $this.linker.same(link);
         }
 
         this.getElement = function () {
