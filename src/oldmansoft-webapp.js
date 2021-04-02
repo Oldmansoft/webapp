@@ -1,5 +1,5 @@
 ﻿/*
-* v0.35.124
+* v0.35.125
 * https://github.com/Oldmansoft/webapp
 * Copyright 2016 Oldmansoft, Inc; http://www.apache.org/licenses/LICENSE-2.0
 */
@@ -41,7 +41,7 @@ window.oldmansoft.webapp = new (function () {
     _messageBox,
     _windowBox,
     _modalBox,
-    _canSetup = true,
+    _calledSetup = false,
     _initialledEvents = [],
     _initialization_option,
     _hideMainViewFirstLoading = false;
@@ -1332,6 +1332,10 @@ window.oldmansoft.webapp = new (function () {
             }
         }
 
+        this.hasContent = function () {
+            return links.count() > 0;
+        }
+
         this.getNode = function () {
             return links.last().node;
         }
@@ -1517,6 +1521,10 @@ window.oldmansoft.webapp = new (function () {
 
         this.inactiveCurrent = function () {
             links.last().inactiveEvent();
+        }
+
+        this.hasContent = function () {
+            return links.count() > 0;
         }
 
         this.getNode = function () {
@@ -1745,6 +1753,10 @@ window.oldmansoft.webapp = new (function () {
             return links.getLinks();
         }
 
+        this.hasContent = function () {
+            return links.count() > 0;
+        }
+
         this.getNode = function () {
             return links.last().node;
         }
@@ -1760,6 +1772,10 @@ window.oldmansoft.webapp = new (function () {
             link: _activeViewAreaManager.get().getLink(),
             view: _activeViewAreaManager.get()
         };
+    }
+
+    this.currentViewHasContent = function () {
+        return _activeViewAreaManager.get().hasContent();
     }
 
     this.event = function () {
@@ -1796,14 +1812,23 @@ window.oldmansoft.webapp = new (function () {
 
     this.dealScrollToVisibleLoading = function (rangeNode) {
         var loading,
-	        src;
+	        src,
+            top;
+        if (!$this.currentViewHasContent()) return;
+
         if (rangeNode && typeof (rangeNode.find) == "function") {
             loading = rangeNode.find(".webapp-loading:visible").first();
         } else {
             loading = $(".webapp-loading:visible").first();
         }
 
-        if (loading.length > 0 && !loading.data("work") && $(window).scrollTop() + $(window).height() > loading.offset().top) {
+        if ($app.current().node.hasClass("open-view")) {
+            top = -$app.current().node.position().top;
+        } else {
+            top = $(window).scrollTop();
+        }
+
+        if (loading.length > 0 && !loading.data("work") && top + $(window).height() > loading.offset().top) {
             loading.data("work", true);
             src = loading.attr("data-src");
             if (!src) {
@@ -2055,8 +2080,8 @@ window.oldmansoft.webapp = new (function () {
     }
 
     this.setup = function (mainViewSelector, defaultLink, hideFirstLoading) {
-        if (_canSetup) {
-            _canSetup = false;
+        if (!_calledSetup) {
+            _calledSetup = true;
         } else {
             throw new Error("Has been setup");
         }
@@ -2071,8 +2096,8 @@ window.oldmansoft.webapp = new (function () {
     }
 
     this.setupLayout = function (layoutSelector, layoutLink, mainViewSelector, defaultLink) {
-        if (_canSetup) {
-            _canSetup = false;
+        if (!_calledSetup) {
+            _calledSetup = true;
         } else {
             throw new Error("Has been setup");
         }
