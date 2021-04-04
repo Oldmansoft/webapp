@@ -1,4 +1,4 @@
-﻿/* version 0.2.13 */
+﻿/* version 0.2.14 */
 oldmansoft.webapp.extend = {};
 oldmansoft.webapp.extend.form_verify = function (form) {
 	function checkReady() {
@@ -8,21 +8,31 @@ oldmansoft.webapp.extend.form_verify = function (form) {
 			var $input = $(this),
                 verify = $input.attr("data-verify");
 			if (!verify) return;
-			if (verify.indexOf("required") > -1) {
-			    if ($input.attr("type") == "radio" || $input.attr("type") == "checkbox") {
-			        if (checkedInput[$input.attr("name")] == undefined) {
-			            checkedInput[$input.attr("name")] = { list: [], valid: false };
-			        }
+			if (verify.indexOf("required") == -1) return;
+			
+			if ($input.attr("type") == "radio" || $input.attr("type") == "checkbox") {
+			    if (checkedInput[$input.attr("name")] == undefined) {
+			        checkedInput[$input.attr("name")] = { list: [], valid: false };
+			    }
 
-					if ($input.prop("checked")) {
-					    checkedInput[$input.attr("name")].valid = true;
-					}
-					checkedInput[$input.attr("name")].list.push($input);
-				} else if ($.trim($input.val()) == "") {
-					valid = false;
-					return false;
+				if ($input.prop("checked")) {
+					checkedInput[$input.attr("name")].valid = true;
 				}
+				checkedInput[$input.attr("name")].list.push($input);
+			} else if ($.trim($input.val()) == "") {
+				valid = false;
+				return false;
 			}
+		});
+		form.find("select").each(function () {
+		    var verify = $(this).attr("data-verify");
+		    if (!verify) return;
+		    if (verify.indexOf("required") == -1) return;
+
+		    if ($.trim($(this).val()) == "") {
+		        valid = false;
+		        return false;
+		    }
 		});
 		for (var name in checkedInput) {
 		    var obj = checkedInput[name];
@@ -78,7 +88,7 @@ oldmansoft.webapp.extend.form_verify = function (form) {
 			return items.length > 0;
 		}
 	});
-	form.find("input,textarea").each(function () {
+	form.find("input,textarea,select").each(function () {
 		var $input = $(this),
             verify = $input.attr("data-verify");
 		if (!verify) return;
