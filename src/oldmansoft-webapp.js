@@ -1,213 +1,1413 @@
 ﻿/*
-* v0.35.125
+* v1.0.0
 * https://github.com/Oldmansoft/webapp
 * Copyright 2016 Oldmansoft, Inc; http://www.apache.org/licenses/LICENSE-2.0
 */
 if (!window.oldmansoft) window.oldmansoft = {};
 window.oldmansoft.webapp = new (function () {
-    var $this = this,
-    _setting = {
-        timeover: 180000,
-        loading_show_time: 1000,
-        loading_hide_time: 200,
-        server_charset: "utf-8"
-    },
-    _text = {
-        ok: "Ok",
-        yes: "Yes",
-        no: "No",
-        loading: "Loading",
-        load_layout_error: "load layout error, click Ok to reload.",
-    },
-    _mainViewArea = null,
-    _openViewArea = null,
-    _modalViewArea = null,
-    _activeViewAreaManager = null,
-    _fnOnUnauthorized = function () {
-        return false;
-    },
-    _fnOnLoadTimeout = function () {
-        return false;
-    },
-    _currentViewEvent = null,
-    _globalViewEvent = null,
-    _visibleLoadingCompleted = [],
-    _isDealLinkEmptyTarget = true,
-    _dealHrefTarget,
-    _isReplacePCScrollBar = true,
-    _WindowScrollBar = null,
-    _scrollbar = [],
-    _canTouch = null,
-    _messageBox,
-    _windowBox,
-    _modalBox,
-    _calledSetup = false,
-    _initialledEvents = [],
-    _initialization_option,
-    _hideMainViewFirstLoading = false;
+    var $webapp = this,
+        constant,
+        config,
+        definition,
+        util,
+        variables;
 
-    function linkEncode(text) {
+    constant = {
+        loadType: {
+            get: "GET",
+            post: "POST"
+        }
+    };
+
+    config = {
+        setting: {
+            timeover: 180000,
+            loading_show_time: 1000,
+            loading_hide_time: 200,
+            server_charset: "utf-8"
+        },
+        text: {
+            ok: "Ok",
+            yes: "Yes",
+            no: "No",
+            loading: "Loading",
+            load_layout_error: "load layout error, click Ok to reload.",
+        }
+    };
+
+    definition = {
+        action: function () {
+            var list = [];
+            this.add = function (fn) {
+                if (typeof (fn) != "function") throw new Error("fn is not a function");
+                list.push(fn);
+            }
+            this.execute = function () {
+                var argus = Array.from(arguments),
+                    i;
+                for (i = 0; i < list.length; i++) {
+                    if (list[i].apply(null, argus) === false) return false;
+                }
+            }
+            this.clone = function () {
+                var result = new definition.action(),
+                    i;
+                for (i = 0; i < list.length; i++) {
+                    result.add(list[i]);
+                }
+                return result;
+            }
+        },
+        actionEvent: function () {
+            this.before = new definition.action();
+            this.after = new definition.action();
+            this.completed = new definition.action();
+        },
+        scrollBar: function (target) {
+            if (!target) {
+                return;
+            }
+            var targetDom,
+                targetHelper,
+                container,
+                track,
+                trackWidth,
+                arrow,
+                arrowHeight,
+                html,
+                downTargetTop,
+                downMouseY,
+                isShow = true;
+
+            function scrollTop(element, value) {
+                if (element.selector == "body") {
+                    if (value != undefined) {
+                        $(document).scrollTop(value);
+                    } else {
+                        return $(document).scrollTop();
+                    }
+                } else {
+                    if (value != undefined)
+                        element.scrollTop(value);
+                    else
+                        return element.scrollTop();
+                }
+            }
+
+            function bodyTarget(dom) {
+                var contentHeight,
+                    viewHeight
+                isSetTrackPosition = false;
+                this.contentHeight = function () {
+                    return contentHeight;
+                }
+                this.viewHeight = function () {
+                    return viewHeight;
+                }
+                this.setHeight = function () {
+                    contentHeight = dom.scrollHeight;
+                    viewHeight = window.innerHeight;
+                }
+                this.setTrackPosition = function (track) {
+                    if (isSetTrackPosition) return true;
+                    track.css("right", 0);
+                    track.css("top", 0);
+                    isSetTrackPosition = true;
+                    return true;
+                }
+                this.bindMouseWheel = function () {
+                    $(window).on("mousewheel", targetMouseWheel);
+                }
+                this.unbindMouseWheel = function () {
+                    $(window).off("mousewheel", targetMouseWheel);
+                }
+            }
+
+            function otherTarget($t, dom) {
+                var contentHeight,
+                    viewHeight;
+
+                this.contentHeight = function () {
+                    return contentHeight;
+                }
+                this.viewHeight = function () {
+                    return viewHeight;
+                }
+                this.setHeight = function () {
+                    contentHeight = dom.scrollHeight;
+                    viewHeight = $t.innerHeight();
+                }
+                this.setTrackPosition = function () {
+                    return false;
+                }
+                this.bindMouseWheel = function () {
+                    $t.on("mousewheel", targetMouseWheel);
+                }
+                this.unbindMouseWheel = function () {
+                    $t.off("mousewheel", targetMouseWheel);
+                }
+            }
+
+            function setArrowPosition() {
+                var height = (targetHelper.viewHeight() - arrowHeight) * scrollTop(target) / (targetHelper.contentHeight() - targetHelper.viewHeight());
+                arrow.css("top", height);
+            }
+
+            function targetMouseWheel(e) {
+                var node = e.target,
+                    delta = e.originalEvent.wheelDelta,
+                    targetScrollTop,
+                    overflowY;
+                while (node != e.currentTarget && node != null && node.tagName != "HTML" && node.tagName != "BODY") {
+                    overflowY = node.style.overflowY;
+                    if ((overflowY == "auto" || overflowY == "scroll") && node.clientHeight != node.scrollHeight) {
+                        if (delta > 0 && node.scrollTop > 0) {
+                            return true;
+                        }
+                        if (delta < 0 && node.scrollTop + node.clientHeight < node.scrollHeight) {
+                            return true;
+                        }
+                    }
+                    node = node.parentElement;
+                }
+
+                if (targetHelper.contentHeight() <= targetHelper.viewHeight()) return true;
+                targetScrollTop = scrollTop(target);
+                if (delta < 0) {
+                    if (targetScrollTop >= (targetHelper.contentHeight() - targetHelper.viewHeight())) {
+                        return true;
+                    }
+                } else {
+                    if (targetScrollTop == 0) {
+                        return true;
+                    }
+                }
+                scrollTop(target, targetScrollTop - delta);
+                setArrowPosition();
+                return false;
+            }
+
+            function htmlSelectStart() {
+                return false;
+            }
+
+            function arrowMouseDown(e) {
+                downMouseY = e.clientY;
+                downTargetTop = scrollTop(target);
+                html.on("selectstart", htmlSelectStart);
+                html.on("mousemove", htmlMouseMove);
+                html.on("mouseup", htmlMouseUp);
+                track.addClass("focus");
+            }
+
+            function htmlMouseUp() {
+                html.off("selectstart", htmlSelectStart);
+                html.off("mousemove", htmlMouseMove);
+                html.off("mouseup", htmlMouseUp);
+                track.removeClass("focus");
+            }
+
+            function htmlMouseMove(e) {
+                var per = (targetHelper.contentHeight() - targetHelper.viewHeight()) / (targetHelper.viewHeight() - arrowHeight)
+                scrollTop(target, downTargetTop - (downMouseY - e.clientY) * per);
+                setArrowPosition();
+            }
+
+            function reset() {
+                targetHelper.setHeight();
+                if (targetHelper.viewHeight() == 0 || targetHelper.contentHeight() <= targetHelper.viewHeight()) {
+                    track.hide();
+                    return;
+                } else {
+                    track.show();
+                }
+                track.height(targetHelper.viewHeight());
+                if (!targetHelper.setTrackPosition(track)) {
+                    track.css("left", target.innerWidth() - parseInt(target.css("padding-left")) - trackWidth);
+                    track.css("top", -parseInt(target.css("padding-top")));
+                }
+                arrowHeight = track.height() * targetHelper.viewHeight() / targetHelper.contentHeight();
+                if (arrowHeight < 20) arrowHeight = 20;
+                arrow.height(arrowHeight);
+                setArrowPosition();
+            }
+
+            target = $(target);
+            targetDom = target.get(0);
+            targetHelper = targetDom.tagName == "BODY" ? new bodyTarget(targetDom) : new otherTarget(target, targetDom);
+            html = $("html");
+            target.css("overflow", "hidden");
+            container = $("<div></div>").addClass("scrollbar-container");
+            track = $("<div></div>").addClass("scrollbar-track");
+            arrow = $("<div></div>").addClass("scrollbar-arrow");
+            container.append(track);
+            track.append(arrow);
+            target.prepend(container);
+            trackWidth = track.width();
+            reset();
+            track.mousedown(arrowMouseDown);
+            $(window).on("resize", reset);
+            targetHelper.bindMouseWheel();
+
+            this.show = function () {
+                if (isShow) {
+                    return;
+                }
+                container.show();
+                targetHelper.bindMouseWheel();
+                isShow = true;
+            }
+            this.hide = function () {
+                if (!isShow) {
+                    return;
+                }
+                targetHelper.unbindMouseWheel();
+                container.hide();
+                isShow = false;
+            }
+            this.reset = function () {
+                reset();
+            }
+        },
+        shield: function (areaClassName, content, isMiddle, className) {
+            var node = $("<div></div>").addClass("box-background"),
+                event = {
+                    close: new definition.actionEvent()
+                };
+
+            function close(fn) {
+                event.close.before.execute();
+                node.stop(true);
+                node.fadeOut(200, function () {
+                    event.close.after.execute();
+                    node.remove();
+                    $webapp.bodyManagement.shrink();
+                    event.close.completed.execute();
+                    if (fn) fn();
+                });
+            }
+
+            if (className) node.addClass(className);
+            if (isMiddle) {
+                node.append($("<div></div>").addClass("layout-center").append($("<div></div>").addClass("layout-center-content").append(content)));
+            } else {
+                node.append(content);
+            }
+            $webapp.bodyManagement.expand();
+            if ($(areaClassName).length == 0) {
+                $("body").prepend($("<div></div>").addClass(areaClassName.replace(".", "")));
+            }
+            $(areaClassName).append(node);
+            node.on("scroll", $webapp.refresh);
+            node.fadeIn(200);
+
+            this.close = function (e, fn) {
+                if (e && e.target != e.currentTarget) {
+                    return;
+                }
+                close(fn);
+            }
+            this.change = function (content) {
+                if (isMiddle) {
+                    node.children().children().empty().append(content);
+                } else {
+                    node.empty().append(content);
+                }
+            }
+            this.click = function (fn) {
+                node.on("click", function () {
+                    close(fn);
+                });
+            }
+            this.event = function () {
+                return event;
+            }
+        },
+        view: function (name, index, href, data, content) {
+            var node = $("<div></div>").addClass("view").addClass(name + "-view"),
+                parameter = new definition.viewEvent_parameter(name, index, href, node),
+                state = {
+                    loaded: false,
+                    actived: false
+                },
+                event = {
+                    view: null,
+                    load: new definition.actionEvent(),
+                    unload: new definition.actionEvent()
+                },
+                attach = {};
+
+            function load(target) {
+                var type = target.data ? constant.loadType.post : constant.loadType.get;
+                state.loaded = true;
+                event.view = variables.event.globalView.clone();
+                variables.event.loadedView = event.view;
+
+                if (content == undefined) {
+                    event.load.before.execute(target);
+                    util.load(target.node, href ? href : variables.defaultHref, target.data, type).done(function () {
+                        event.load.after.execute(target);
+                        variables.event.loadedView.load.execute(parameter);
+                        target.active();
+                        event.load.completed.execute(target);
+                    });
+                } else {
+                    target.node.append(content);
+                    variables.event.loadedView.load.execute(parameter);
+                    target.active();
+                }
+            }
+
+            this.name = name;
+            this.index = index;
+            this.href = href;
+            this.data = data;
+            this.node = node;
+            this.unload = function () {
+                event.unload.before.execute(this);
+                if (state.actived) {
+                    event.view.inactive.execute(parameter);
+                    state.actived = false;
+                }
+                if (state.loaded) {
+                    event.view.unload.execute(parameter);
+                    state.loaded = false;
+                }
+                event.unload.after.execute(this);
+                this.node.remove();
+                this.href = undefined;
+                event.unload.completed.execute(this);
+                return this;
+            }
+            this.active = function () {
+                if (!state.loaded) {
+                    load(this);
+                    return this;
+                }
+                if (state.actived) return this;
+
+                this.node.show();
+                $webapp.resetWindowScrollBar();
+                event.view.active.execute(parameter);
+                state.actived = true;
+                return this;
+            }
+            this.inactive = function (hide) {
+                if (!state.actived) return this;
+                event.view.inactive.execute(parameter);
+                if (hide) this.node.hide();
+                state.actived = false;
+                return this;
+            }
+            this.event = function (view) {
+                if (view) event = view.event();
+                return event;
+            }
+            this.attach = function (name, value) {
+                if (value == undefined) return attach[name];
+                attach[name] = value;
+                return this;
+            }
+            this.state = function () {
+                return { loaded: state.loaded, actived: state.actived };
+            }
+        },
+        viewEvent_parameter: function (name, index, href, node) {
+            this.name = name;
+            this.index = index;
+            this.href = href;
+            this.node = node;
+        },
+        viewEvent: function () {
+            this.load = new definition.action();
+            this.unload = new definition.action();
+            this.active = new definition.action();
+            this.inactive = new definition.action();
+            this.clone = function () {
+                var result = new definition.viewEvent();
+                result.load = this.load.clone();
+                result.unload = this.unload.clone();
+                result.active = this.active.clone();
+                result.inactive = this.inactive.clone();
+                return result;
+            }
+        },
+        viewManager: function () {
+            var list = [];
+
+            this.add = function (view) {
+                list.push(view);
+                return view;
+            }
+            this.count = function () {
+                return list.length;
+            }
+            this.get = function (index) {
+                return list[index];
+            }
+            this.last = function () {
+                if (list.length == 0) return null;
+                return list[list.length - 1];
+            }
+            this.pop = function () {
+                return list.pop();
+            }
+            this.clear = function () {
+                var result = list;
+                list = [];
+                return result;
+            }
+        },
+        mainViewer: function (selector) {
+            var name = "main",
+                views = new definition.viewManager();
+
+            function changeViews(hrefs) {
+                var view = new definition.view(name, hrefs.length - 1, hrefs[hrefs.length - 1]);
+                view.event().load.after.add(function () {
+                    var i;
+
+                    for (i = views.count() - 1; i > hrefs.length - 1; i--) {
+                        views.pop().unload();
+                    }
+                    for (i = 0; i < hrefs.length - 1; i++) {
+                        if (i < views.count()) {
+                            if (views.get(i).href == hrefs[i]) {
+                                views.get(i).inactive(true);
+                            } else {
+                                views.get(i).unload();
+                            }
+                        } else {
+                            views.add(new definition.view(name, i, hrefs[i]));
+                        }
+                    }
+                    if (hrefs.length == views.count()) {
+                        views.pop().unload();
+                    }
+                    views.add(view);
+                    $(selector).append(view.node);
+                });
+                view.event().load.completed.add(function () {
+                    $webapp.linker.callChangeCompleted(true);
+                });
+                view.active();
+            }
+
+            this.getView = function () {
+                return views.last();
+            }
+            this.replaceLastView = function (view) {
+                views.pop().unload();
+                views.add(view);
+                $(selector).append(view.node);
+                view.active();
+            }
+            this.close = function () {
+                $webapp.linker.back();
+                return new function () {
+                    this.completed = function (fn) {
+                        $webapp.linker.setChangeCompleted(fn);
+                    }
+                }
+            }
+            this.reload = function (fn) {
+                var view = new definition.view(name, views.count() - 1, views.last().href);
+                view.event().load.after.add(function () {
+                    views.pop().unload();
+                    views.add(view);
+                    $(selector).append(view.node);
+                    if (typeof (fn) == "function") fn();
+                });
+                view.active();
+            }
+            this.redirect = function (href) {
+                $webapp.linker.same(href);
+            }
+            this.linkerChange = function (hash) {
+                var hrefs = new util.linkParser(hash).getHrefs(),
+                    i,
+                    view;
+
+                $webapp.dialog.clear();
+                variables.viewer.window.clear();
+
+                if (hrefs.length >= views.count()) {
+                    changeViews(hrefs);
+                    return;
+                }
+                view = views.get(hrefs.length - 1);
+                if (view.href != hrefs[hrefs.length - 1] || !view.state().loaded) {
+                    changeViews(hrefs);
+                    return;
+                }
+
+                for (i = views.count() - 1; i > hrefs.length - 1; i--) {
+                    views.pop().unload();
+                }
+                for (i = 0; i < hrefs.length - 1; i++) {
+                    if (views.get(i).href == hrefs[i]) continue;
+                    views.get(i).unload();
+                }
+                views.last().active();
+                $webapp.linker.callChangeCompleted(false);
+            }
+        },
+        windowViewer: function () {
+            var views = new definition.viewManager();
+
+            function openReturnOption(view) {
+                this.closed = function (fn) {
+                    var argus,
+                        i;
+                    if (typeof (fn) != "function") throw new Error("fn is not a function");
+                    view.attach("closed", fn);
+                    if (arguments.length > 1) {
+                        argus = [];
+                        for (i = 1; i < arguments.length; i++) {
+                            argus.push(arguments[i]);
+                        }
+                        view.attach("argus", argus);
+                    }
+                    return this;
+                }
+                this.loaded = function (fn) {
+                    if (typeof (fn) != "function") throw new Error("fn is not a function");
+                    view.attach("loaded", fn);
+                    return this;
+                }
+                this.force = function () {
+                    view.attach("force", true);
+                    return this;
+                }
+            }
+
+            this.getView = function () {
+                return views.last();
+            }
+            this.replaceLastView = function (view) {
+                views.pop().unload();
+                views.add(view);
+                view.attach("shield").change(view.node);
+                view.active();
+            }
+            this.close = function () {
+                var argus = Array.from(arguments),
+                    closed = new definition.action();
+                views.last().attach("shield").close(null, function () {
+                    var view = views.pop().unload();
+                    if (views.count() == 0) {
+                        variables.viewer.manager.pop();
+                    } else {
+                        views.last().active();
+                    }
+                    if (view.attach("closed")) {
+                        if (view.attach("argus")) {
+                            argus = view.attach("argus").concat(argus);
+                        }
+                        view.attach("closed").apply(null, argus);
+                    }
+                    closed.execute();
+                });
+                return new function () {
+                    this.completed = function (fn) {
+                        closed.add(fn);
+                    }
+                }
+            }
+            this.reload = function (fn) {
+                var oldView = views.last(),
+                    view = new definition.view(oldView.name, oldView.index, oldView.href, oldView.data);
+                view.attach("shield", oldView.attach("shield"));
+                view.event().load.after.add(function () {
+                    views.pop().unload();
+                    views.add(view);
+                    view.attach("shield").change(view.node);
+                    if (typeof (fn) == "function") fn();
+                });
+                view.active();
+            }
+            this.redirect = function (href, data) {
+                var oldView = views.last(),
+                    view = new definition.view(oldView.name, oldView.index, href, data);
+                view.attach("shield", oldView.attach("shield"));
+                view.event().load.after.add(function () {
+                    views.pop().unload();
+                    views.add(view);
+                    view.attach("shield").change(view.node);
+                });
+                view.active();
+            }
+            this.open = function (href, data) {
+                var view = new definition.view("open", views.count(), href, data);
+                view.event().load.after.add(function () {
+                    if (views.count() == 0) {
+                        variables.viewer.manager.push(variables.viewer.window);
+                    } else {
+                        views.last().inactive();
+                    }
+                    views.add(view);
+                    view.attach("shield", new definition.shield(".window-ares", view.node, false, "window-background"));
+                    if (view.attach("loaded")) view.attach("loaded")();
+                });
+                view.active();
+                return new openReturnOption(view);
+            }
+            this.modal = function (href, data) {
+                var view = new definition.view("modal", views.count(), href, data);
+                view.node.addClass("box-panel");
+                view.event().load.after.add(function () {
+                    var shield;
+                    if (views.count() == 0) {
+                        variables.viewer.manager.push(variables.viewer.window);
+                    } else {
+                        views.last().inactive();
+                    }
+                    views.add(view);
+                    shield = new definition.shield(".window-ares", view.node, true, "window-background");
+                    if (!view.attach("force")) {
+                        shield.click(function () {
+                            var view = views.pop().unload();
+                            if (views.count() == 0) {
+                                variables.viewer.manager.pop();
+                            } else {
+                                views.last().active();
+                            }
+                            if (view.attach("closed")) {
+                                if (view.attach("argus")) {
+                                    view.attach("closed").apply(null, view.attach("argus"));
+                                } else {
+                                    view.attach("closed")();
+                                }
+                            }
+                        });
+                    }
+                    view.attach("shield", shield);
+                    if (view.attach("loaded")) view.attach("loaded")();
+                });
+                view.active();
+                return new openReturnOption(view);
+            }
+            this.clear = function () {
+                var list = views.clear(),
+                    i;
+                if (list.length == 0) return;
+                for (i = list.length - 1; i > -1; i--) {
+                    list[i].attach("shield").close();
+                }
+                variables.viewer.manager.pop();
+            }
+        },
+        viewerManager: function () {
+            var current,
+                stack = [];
+            this.push = function (viewer) {
+                stack.push(current);
+                if (current) current.getView().inactive();
+                current = viewer;
+            }
+            this.get = function () {
+                return current;
+            }
+            this.pop = function () {
+                if (stack.length == 1) {
+                    throw new Error("error call");
+                }
+                current = stack.pop();
+                current.getView().active();
+                return current;
+            }
+        },
+        innerViewer: function () {
+            var name = "inner";
+
+            function viewManager() {
+                var list = [];
+                this.set = function (selector, view) {
+                    list[selector] = view;
+                }
+                this.unload = function () {
+                    for (var key in list) {
+                        if (!list[key]) continue;
+                        list[key].unload();
+                    }
+                }
+                this.inactive = function () {
+                    for (var key in list) {
+                        if (!list[key]) continue;
+                        list[key].inactive();
+                    }
+                }
+            }
+
+            this.name = name;
+            this.load = function (selector, href) {
+                var node = $webapp.currentViewNodeFind(selector),
+                    view;
+                if (node.length == 0) {
+                    return;
+                }
+
+                view = new definition.view(name, 0, href);
+                view.event().load.after.add(function () {
+                    var currentView = variables.viewer.manager.get().getView(),
+                        inner = new viewManager();
+                    if (node.data("view")) {
+                        node.data("view").unload();
+                    }
+                    node.data("view", view);
+                    node.append(view.node);
+
+                    if (!currentView.attach("inner")) {
+                        currentView.attach("inner", inner);
+                        variables.viewer.manager.get().getView().event().view.inactive.add(function () {
+                            inner.inactive();
+                        });
+                        variables.viewer.manager.get().getView().event().view.unload.add(function () {
+                            inner.unload();
+                        });
+                    }
+                    currentView.attach("inner").set("selector", view);
+                });
+                view.active();
+            }
+            this.replaceLastView = function (selector, view) {
+                var node = $webapp.currentViewNodeFind(selector),
+                    currentView;
+                if (node.length == 0) {
+                    return;
+                }
+
+                currentView = variables.viewer.manager.get().getView(),
+                    inner = new viewManager();
+                if (node.data("view")) {
+                    node.data("view").unload();
+                }
+                node.data("view", view);
+                node.append(view.node);
+
+                if (!currentView.attach("inner")) {
+                    currentView.attach("inner", inner);
+                    variables.viewer.manager.get().getView().event().view.inactive.add(function () {
+                        inner.inactive();
+                    });
+                    variables.viewer.manager.get().getView().event().view.unload.add(function () {
+                        inner.unload();
+                    });
+                }
+                currentView.attach("inner").set("selector", view);
+                view.active();
+            }
+        },
+        dealTouchMove: function (e) {
+            var path,
+                i,
+                isCancel = true;
+
+            if ($("body").hasClass("layout-expanded")) {
+                path = e.originalEvent.path;
+                if (!path) return;
+                for (i = 0; i < path.length; i++) {
+                    if (path[i].tagName == "BODY") break;
+                    if (path[i].scrollHeight > path[i].clientHeight) {
+                        isCancel = false;
+                        break;
+                    }
+                }
+                if (isCancel) {
+                    e.preventDefault();
+                }
+            }
+        }
+    }
+
+    util = {
+        linkParser: function (input) {
+            var store = [],
+                content,
+                i;
+
+            function fix(hash) {
+                if (!hash) return "";
+                if (hash.substr(0, 1) == "#") return hash.substr(1);
+                return hash;
+            }
+
+            this.getHrefs = function () {
+                return store.slice();
+            }
+
+            this.count = function () {
+                return store.length;
+            }
+
+            this.add = function (href) {
+                return store.push(fix(href));
+            }
+
+            this.pop = function () {
+                return store.pop();
+            }
+
+            this.last = function (href) {
+                if (href) {
+                    store[store.length - 1] = fix(href);
+                    return;
+                }
+                return store[store.length - 1];
+            }
+
+            this.getHash = function () {
+                var links = [],
+                    i;
+                for (i = 0; i < store.length; i++) {
+                    links.push($webapp.linkEncode(store[i]));
+                }
+                return links.join("_");
+            }
+
+            if (arguments.length == 0) return;
+            if (input instanceof Array) store = input.slice();
+            else {
+                content = fix(input);
+                if (content.indexOf("#") > -1 || content.indexOf("%23") > -1) {
+                    store = content.replace(/%23/g, "#").split("#");
+                } else {
+                    store = content.split("_");
+                    for (i = 0; i < store.length; i++) {
+                        store[i] = $webapp.linkDecode(store[i]);
+                    }
+                }
+            }
+        },
+        isHtmlDocument: function (data) {
+            var spaceIndex,
+                c;
+
+            if (!data) return false;
+
+            for (spaceIndex = 0; spaceIndex < data.length; spaceIndex++) {
+                c = data.substr(spaceIndex, 1);
+                if (c == " ") continue;
+                if (c == "\r") continue;
+                if (c == "\n") continue;
+                if (c == "\t") continue;
+                break;
+            }
+            if (data.substr(spaceIndex, 15) == "<!DOCTYPE html>") return true;
+            if (data.substr(spaceIndex, 5) == "<html") return true;
+            return false;
+        },
+        load: function (node, href, data, type) {
+            var loadDone = new definition.action(),
+                loadFail = new definition.action(),
+                loading;
+
+            function returnOption() {
+                this.done = function (fn) {
+                    loadDone.add(fn);
+                }
+                this.fail = function (fn) {
+                    loadFail.add(fn);
+                }
+            }
+            if (variables.hideMainViewFirstLoadingTips) {
+                variables.hideMainViewFirstLoadingTips = false;
+            } else {
+                loading = $webapp.loadingTip.show();
+            }
+            $.ajax({
+                mimeType: 'text/html; charset=' + config.setting.server_charset,
+                url: href,
+                data: data,
+                type: type,
+                timeout: config.setting.timeover
+            }).done(function (content, textStatus, jqXHR) {
+                if (loading) loading.hide();
+                var xRespondedJson = jqXHR.getResponseHeader("X-Responded-JSON"),
+                    json;
+
+                if (xRespondedJson) {
+                    json = JSON.parse(xRespondedJson);
+                    if (json.status == 401) {
+                        if (variables.event.unauthorized.execute(href, json.headers ? json.headers.location : null) !== false) {
+                            if (json.headers && json.headers.location) {
+                                document.location = json.headers.location;
+                            }
+                        }
+                    }
+                }
+                if (util.isHtmlDocument(content)) {
+                    alert("You try to load wrong content: " + href);
+                    return;
+                }
+
+                node.html(content);
+                loadDone.execute();
+                $webapp.refresh();
+            }).fail(function (jqXHR, textStatus, errorThrown) {
+                var response,
+                    title,
+                    content;
+                if (loading) loading.hide();
+                if (jqXHR.status == 401) {
+                    if (variables.event.unauthorized.execute(href) === false) {
+                        return;
+                    }
+                } else if (jqXHR.status == 0 && textStatus == "timeout") {
+                    variables.event.loadTimeout.execute(node);
+                    return;
+                }
+                response = $(jqXHR.responseText);
+                title = $("<h4></h4>").text(errorThrown);
+                content = $("<pre></pre>");
+
+                if (response[11] != null && response[11].nodeType == 8) {
+                    content.text(response[11].data);
+                } else {
+                    content.text(response.eq(1).text());
+                }
+
+                node.append(title).append(content);
+                loadFail.execute();
+            });
+            return new returnOption();
+        },
+        deal: {
+            json: function (json) {
+                var text = json.text ? json.text : json.Text;
+                if (text) {
+                    $app.alert(text).ok(function () {
+                        util.deal.close(json);
+                    });
+                } else {
+                    util.deal.close(json);
+                }
+            },
+            close: function (json) {
+                var off = json.off ? json.off : json.Off;
+                if (off) {
+                    $webapp.viewClose().completed(function () {
+                        util.deal.action(json);
+                    });
+                } else {
+                    util.deal.action(json);
+                }
+            },
+            action: function (json) {
+                var path = json.path ? json.path : json.Path,
+                    data = json.data ? json.data : json.Data,
+                    renew = json.renew ? json.renew : json.Renew;
+                if (data) {
+                    variables.event.formDealCustomized.execute(data);
+                }
+
+                if (path) {
+                    $app.same(path);
+                } else if (renew) {
+                    $app.reload();
+                }
+            }
+        },
+        click: function (e) {
+            var target = $(this).attr("target"),
+                href = $(this).attr('href');
+
+            if (href == undefined || (href.length > 0 && href[0] == "#")) {
+                return;
+            }
+            if (target == "_none") {
+                return;
+            }
+            if (!target) {
+                e.preventDefault();
+                variables.hrefTargetDealer._link(href);
+                return;
+            }
+            if (variables.hrefTargetDealer[target]) {
+                e.preventDefault();
+                variables.hrefTargetDealer[target](href, $(this));
+                return;
+            }
+            if (target[0] != "_") {
+                variables.viewer.inner.load(target, href);
+                e.preventDefault();
+            }
+        },
+        verification: {
+            required: function (input) {
+                var type = input[0].attr("type"),
+                    i;
+                if (type == "checkbox" || type == "radio") {
+                    for (i = 0; i < input.length; i++) {
+                        if (input[i].prop("checked")) return true;
+                    }
+                } else {
+                    for (i = 0; i < input.length; i++) {
+                        if ($.trim(input[i].val()) != "") return true;
+                    }
+                }
+                return false;
+            },
+            verify: function (rule, input) {
+                if (!rule) return true;
+                var list = rule.split(" "),
+                    i;
+                for (i = 0; i < list.length; i++) {
+                    if (list[i] == "") continue;
+                    if (util.verification[list[i]](input) === false) return false;
+                }
+                return true;
+            }
+        },
+        form: {
+            serialize: function (formData) {
+                var list = [];
+                formData.forEach(function (value, key) {
+                    if (typeof (value) != "string") return;
+                    list.push(encodeURIComponent(key) + "=" + encodeURIComponent(value));
+                });
+                return list.join("&");
+            },
+            image: function () {
+                function dataURL2Blob(dataurl) {
+                    var arr = dataurl.split(','),
+                        mime = arr[0].match(/:(.*?);/)[1],
+                        bstr = atob(arr[1]),
+                        n = bstr.length,
+                        u8arr = new Uint8Array(n);
+                    while (n--) {
+                        u8arr[n] = bstr.charCodeAt(n);
+                    }
+                    return new Blob([u8arr], { type: mime });
+                }
+
+                function appendFileToImages(element, file, blob, message) {
+                    if (!$(element).data("images")) $(element).data("images", []);
+                    $(element).data("images").push({ blob: blob, name: file.name });
+
+                    if ($(element).data("images").length == element.files.length) {
+                        message.close();
+                        $(element).trigger("dealt");
+                    }
+                }
+
+                function render(element, file, dataUrl, width, height, message) {
+                    var image = new Image();
+                    image.onload = function () {
+                        var canvas,
+                            ctx,
+                            blob;
+
+                        if (image.width <= width && image.height <= height) {
+                            blob = file;
+                        } else {
+                            canvas = document.createElement("canvas");
+                            ctx = canvas.getContext("2d");
+
+                            if (image.width >= image.height && image.width > width) {
+                                image.height *= width / image.width;
+                                image.width = width;
+                            } else if (image.width <= image.height && image.height > height) {
+                                image.width *= height / image.height;
+                                image.height = height;
+                            }
+                            canvas.width = image.width;
+                            canvas.height = image.height;
+
+                            ctx.drawImage(image, 0, 0, image.width, image.height);
+                            blob = file.type == "image/jpeg" ? dataURL2Blob(canvas.toDataURL("image/jpeg", 0.95)) : dataURL2Blob(canvas.toDataURL(file.type));
+                        }
+
+                        appendFileToImages(element, file, blob, message);
+                    };
+                    image.src = dataUrl;
+                }
+
+                var attr, width, height, file, message, reader, i;
+                attr = $(this).attr("data-image");
+                if (!attr) return;
+                attr = attr.split("x");
+                if (attr.length != 2) return;
+                width = Number(attr[0]);
+                height = Number(attr[1]);
+                if (isNaN(width) || width < 1 || isNaN(height) || height < 1) return;
+
+                $(this).trigger("dealing");
+                $(this).data("images", null);
+                if (this.files.length == 0) {
+                    $(this).trigger("dealt");
+                    return;
+                }
+
+                message = $app.message("图片处理中");
+                for (i = 0; i < this.files.length; i++) {
+                    file = this.files[i];
+                    if (!file.type.match(/image.*/)) {
+                        appendFileToImages(this, file, file, message);
+                        continue;
+                    }
+                    reader = new FileReader();
+                    reader.onload = function (e) {
+                        render(this, file, e.target.result, width, height, message);
+                    };
+                    reader.readAsDataURL(file);
+                }
+            },
+            verify: function (form) {
+                function check() {
+                    var valid = true,
+                        list = [],
+                        name;
+                    form.find("[data-verify]").each(function () {
+                        var input = $(this),
+                            name = input.attr("name");
+                        if (!name) name = input.attr("data-input");
+                        if (!name) return;
+                        if (!list[name]) list[name] = { verify: input.attr("data-verify"), input: [] };
+                        if (!form.data("verify")) input.on("change", check);
+                        list[name].input.push(input);
+                    });
+                    for (name in list) {
+                        if (!util.verification.verify(list[name].verify, list[name].input)) {
+                            valid = false;
+                            break;
+                        }
+                    }
+                    if (!form.data("verify")) {
+                        form.data("verify", true);
+                        form.on("change", check);
+                    }
+
+                    if (valid) {
+                        form.removeClass("not-ready");
+                    } else {
+                        form.addClass("not-ready");
+                    }
+                    return valid;
+                }
+                return check();
+            },
+            getFormData: function (form) {
+                var data = new FormData();
+                form.find("input[type!=file]").each(function () {
+                    var input = $(this),
+                        name = input.attr("name"),
+                        type = input.attr("type");
+                    if (!name || input.prop("readonly") || input.prop("disabled")) return;
+                    if (type == "checkbox" || type == "radio") {
+                        if (!input.prop("checked")) return;
+                    }
+                    data.append(name, $.trim(input.val()));
+                });
+                form.find("input[type=file]").each(function () {
+                    var input = $(this),
+                        name = input.attr("name"),
+                        images = input.data("images"),
+                        image,
+                        i;
+                    if (!name || input.prop("readonly") || input.prop("disabled")) return;
+                    if (images) {
+                        for (i = 0; i < images.length; i++) {
+                            image = images[i];
+                            if (!image) continue;
+                            data.append(name, image.blob, image.name);
+                        }
+                    } else {
+                        if (this.files.length == 0) {
+                            data.append(name, new Blob([], { type: "application/octet-stream" }), "");
+                        }
+                        for (i = 0; i < this.files.length; i++) {
+                            data.append(name, this.files[i], this.files[i].name);
+                        }
+                    }
+                });
+                form.find("select").each(function () {
+                    var input = $(this),
+                        name = input.attr("name");
+                    if (!name || input.prop("readonly") || input.prop("disabled")) return;
+                    data.append(name, input.val());
+                });
+                form.find("textarea").each(function () {
+                    var input = $(this),
+                        name = input.attr("name");
+                    if (!name || input.prop("readonly") || input.prop("disabled")) return;
+                    data.append(name, $.trim(input.val()));
+                });
+                return data;
+            },
+            submit: function () {
+                var form = $(this),
+                    action = form.attr("action"),
+                    formData = util.form.getFormData(form),
+                    target = form.attr("target"),
+                    loading;
+                if (target == "_none") return;
+                if (target == "_blank") return;
+                if (target == "_open") {
+                    $app.open(action, util.form.serialize(formData));
+                    return false;
+                }
+                if (target && target[0] != "_") {
+                    if ($webapp.currentViewNodeFind(target).length == 0) return;
+                }
+
+                if (!util.form.verify(form)) return false;
+                loading = $webapp.loadingTip.show();
+                $.ajax({
+                    url: action ? action : variables.defaultHref,
+                    data: formData,
+                    type: constant.loadType.post,
+                    contentType: false,
+                    processData: false
+                }).done(function (content, textStatus, jqXHR) {
+                    loading.hide();
+                    var xRespondedJson = jqXHR.getResponseHeader("X-Responded-JSON"),
+                        json,
+                        type = jqXHR.getResponseHeader("content-type").split(";")[0],
+                        view;
+
+                    if (xRespondedJson) {
+                        json = JSON.parse(xRespondedJson);
+                        if (json.status == 401) {
+                            if (variables.event.unauthorized.execute(href, json.headers ? json.headers.location : null) !== false) {
+                                if (json.headers && json.headers.location) {
+                                    document.location = json.headers.location;
+                                }
+                            }
+                        }
+                    }
+                    if (type == "application/json") {
+                        util.deal.json(content);
+                    } else {
+                        if (target && target[0] != "_") {
+                            view = new definition.view(variables.viewer.inner.name, 0, action, util.form.serialize(formData), content);
+                            variables.viewer.inner.replaceLastView(target, view);
+                        } else {
+                            view = variables.viewer.manager.get().getView();
+                            variables.viewer.manager.get().replaceLastView(new definition.view(view.name, view.index, action, util.form.serialize(formData), content));
+                        }
+                        $webapp.refresh();
+                    }
+                }).fail(function (jqXHR, textStatus, errorThrown) {
+                    loading.hide();
+                    $app.alert($(jqXHR.responseText).eq(1).text(), jqXHR.statusText);
+                });
+                return false;
+            }
+        },
+        initialization: function (mainViewSelector, defaultHref) {
+            function returnOption() {
+                this.defaultHref = function (href) {
+                    if (!href) return variables.defaultHref;
+                    variables.defaultHref = href;
+                    return this;
+                }
+                this.unauthorized = function (fn) {
+                    variables.event.unauthorized.add(fn);
+                    return this;
+                }
+                this.loadTimeout = function (fn) {
+                    variables.event.loadTimeout.add(fn);
+                    return this;
+                }
+                this.replacePCScrollBar = function (b) {
+                    variables.replacePCScrollBar = b;
+                    return this;
+                }
+                this.viewLoaded = function (fn) {
+                    variables.event.globalView.load.add(fn);
+                    return this;
+                }
+                this.viewActived = function (fn) {
+                    variables.event.globalView.active.add(fn);
+                    return this;
+                }
+                this.viewInactived = function (fn) {
+                    variables.event.globalView.inactive.add(fn);
+                    return this;
+                }
+                this.viewUnloaded = function (fn) {
+                    variables.event.globalView.unload.add(fn);
+                    return this;
+                }
+                this.visibleLoaded = function (fn) {
+                    variables.event.visibleLoaded.add(fn);
+                    return this;
+                }
+            }
+
+            if (!!window.ActiveXObject || "ActiveXObject" in window) {
+                $.ajaxSetup({ cache: false });
+            }
+            $(document).on("click", "a", util.click);
+            $(document).on("submit", "form", util.form.submit);
+            $(document).on("click", ".webapp-close", function (e) {
+                e.preventDefault();
+                $webapp.viewClose($(this).attr("data-close"));
+            });
+            $(document).on("change", "form input[type=file][data-image]", util.form.image)
+            $webapp.configEvent().refresh($webapp.resetWindowScrollBar);
+            $webapp.configEvent().refresh($webapp.dealScrollToVisibleLoading);
+            $(window).on("scroll", $webapp.refresh);
+            $(window).on("resize", $webapp.refresh);
+            $(document).on("touchmove", definition.dealTouchMove);
+
+            variables.defaultHref = defaultHref;
+            variables.viewer.window = new definition.windowViewer();
+            variables.viewer.main = new definition.mainViewer(mainViewSelector);
+            variables.viewer.manager.push(variables.viewer.main);
+            variables.event.initialled.execute();
+            return new returnOption();
+        }
+    };
+
+    variables = {
+        hasSetup: false,
+        hideMainViewFirstLoadingTips: false,
+        replacePCScrollBar: false,
+        defaultHref: null,
+        viewer: {
+            main: null,
+            window: null,
+            manager: new definition.viewerManager(),
+            inner: new definition.innerViewer()
+        },
+        event: {
+            initialled: new definition.action(),
+            globalView: new definition.viewEvent(),
+            loadedView: new definition.viewEvent(),
+            loadTimeout: new definition.action(),
+            unauthorized: new definition.action(),
+            refresh: new definition.action(),
+            visibleLoaded: new definition.action(),
+            formDealCustomized: new definition.action()
+        },
+        windowScrollBar: null,
+        hrefTargetDealer: {
+            _link: function (href) {
+                $webapp.linker.link(href);
+            },
+            _add: function (href) {
+                $webapp.linker.add(href);
+            },
+            _same: function (href) {
+                $webapp.linker.same(href);
+            },
+            _open: function (href) {
+                $webapp.openWindow(href);
+            }
+        }
+    };
+
+    this.linkEncode = function (text) {
         if (!text) return "";
         if (text.indexOf("#") == 0) return text.substr(1, text.length - 1);
         return text.replace(/\(/g, "(9)").replace(/\?/g, "(0)").replace(/\//g, "(1)").replace(/_/g, "(2)").replace(/#/g, "(3)").replace(/&/g, "(4)");
     }
 
-    function linkDecode(code) {
+    this.linkDecode = function (code) {
         if (!code) return "";
         return code.replace(/\(0\)/g, "?").replace(/\(1\)/g, "/").replace(/\(2\)/g, "_").replace(/\(3\)/g, "#").replace(/\(4\)/g, "&").replace(/\(9\)/g, "(");
-    }
-
-    function linkDecode_tilde(code) {
-        if (!code) return "";
-        return code.replace(/\$7e/g, "~").replace(/\$23/g, "#").replace(/\$2f/g, "/").replace(/\$3f/g, "?").replace(/\$24/g, "$");
-    }
-
-    function linkParser(input) {
-        var store = [],
-            hashContent,
-            i;
-
-        function getHashContent(hash) {
-            if (!hash) return "";
-            if (hash.substr(0, 1) == "#") return hash.substr(1);
-            return hash;
-        }
-
-        if (input instanceof Array) store = input.slice();
-        else {
-            hashContent = getHashContent(input);
-            if (hashContent.indexOf("#") > -1 || hashContent.indexOf("%23") > -1) {
-                store = hashContent.replace(/%23/g, "#").split("#");
-            } else if (hashContent.indexOf("$") > -1) {
-                store = hashContent.split("~");
-                for (i = 0; i < store.length; i++) {
-                    store[i] = linkDecode_tilde(store[i]);
-                }
-            } else {
-                store = hashContent.split("_");
-                for (i = 0; i < store.length; i++) {
-                    store[i] = linkDecode(store[i]);
-                }
-            }
-        }
-
-        this.getLinks = function () {
-            return store.slice();
-        }
-
-        this.push = function (item) {
-            return store.push(getHashContent(item));
-        }
-
-        this.pop = function () {
-            return store.pop();
-        }
-
-        this.last = function () {
-            return store[store.length - 1];
-        }
-
-        this.getContent = function () {
-            var links = [],
-                i;
-            for (i = 0; i < store.length; i++) {
-                links.push(linkEncode(store[i]));
-            }
-            return links.join("_");
-        }
-    }
-
-    this.parser = function (input) {
-        return new linkParser(input);
-    }
-
-    function getAbsolutePath(path, basePath, fullLink) {
-        var indexOfAmpersand,
-            indexOfQuestion,
-            pathnames;
-        if (path == "") path = fullLink;
-        indexOfAmpersand = path.indexOf("&");
-        if (indexOfAmpersand > -1) {
-            indexOfQuestion = path.indexOf("?");
-            if (indexOfQuestion == -1 || indexOfAmpersand < indexOfQuestion) {
-                path = path.substr(0, indexOfAmpersand);
-            }
-        }
-        if (path.substr(0, 1) == "/") {
-            return path;
-        }
-        if (!basePath) {
-            basePath = document.location.pathname;
-        } else {
-            indexOfQuestion = basePath.indexOf("?");
-            if (indexOfQuestion > -1) {
-                basePath = basePath.substr(0, indexOfQuestion);
-            }
-            indexOfAmpersand = basePath.indexOf("&");
-            if (indexOfAmpersand > -1) {
-                basePath = basePath.substr(0, indexOfAmpersand);
-            }
-        }
-        pathnames = basePath.split("/");
-        pathnames.pop();
-        return pathnames.join("/") + "/" + path;
-    }
-
-    function getPathHasAbsolutePathFromArray(array, index, fullLink) {
-        for (var i = index; i > -1; i--) {
-            if (array[i] == "" && fullLink.substr(0, 1) == "/") return fullLink;
-            if (array[i].substr(0, 1) == "/") return array[i];
-        }
-        return null;
-    }
-
-    function isHtmlDocument(data) {
-        var spaceIndex,
-            c;
-
-        if (!data) return false;
-
-        for (spaceIndex = 0; spaceIndex < data.length; spaceIndex++) {
-            c = data.substr(spaceIndex, 1);
-            if (c == " ") continue;
-            if (c == "\r") continue;
-            if (c == "\n") continue;
-            if (c == "\t") continue;
-            break;
-        }
-        if (data.substr(spaceIndex, 15) == "<!DOCTYPE html>") return true;
-        if (data.substr(spaceIndex, 5) == "<html") return true;
-        return false;
-    }
-
-    this.scriptLoader = new function () {
-        var hasScripts = [];
-
-        function loadScriptExecute(args, index, deferred) {
-            if (args.length == index + 1) {
-                deferred.resolve();
-            } else {
-                loadScript(args, index + 1, deferred);
-            }
-        }
-
-        function loadScript(args, index, deferred) {
-            if (hasScripts[args[index]]) {
-                loadScriptExecute(args, index, deferred);
-                return;
-            }
-            $.getScript(args[index], function () {
-                hasScripts[args[index]] = true;
-                loadScriptExecute(args, index, deferred);
-            });
-        }
-
-        this.load = function () {
-            var result = $.Deferred();
-            if (arguments.length == 0) result.resolve();
-            else loadScript(arguments, 0, result);
-            return result;
-        }
     }
 
     this.bodyManagement = new function () {
@@ -216,668 +1416,75 @@ window.oldmansoft.webapp = new (function () {
         this.expand = function () {
             if (count == 0) {
                 $("body").addClass("layout-expanded");
-                if (_WindowScrollBar) _WindowScrollBar.hide();
+                if (variables.windowScrollBar) {
+                    variables.windowScrollBar.reset();
+                }
             }
             count++;
         }
-
         this.shrink = function () {
             count--;
             if (count == 0) {
                 $("body").removeClass("layout-expanded");
-                if (_WindowScrollBar) _WindowScrollBar.show();
+                if (variables.windowScrollBar) {
+                    variables.windowScrollBar.reset();
+                }
             }
             if (count < 0) {
-                throw new Error("shrink error");
+                console.error("shrink error");
             }
         }
     }
 
-    this.scrollbar = function (target) {
-        if (!target) {
-            return;
-        }
-        var targetDom,
-            targetHelper,
-            container,
-            track,
-            trackWidth,
-            arrow,
-            arrowHeight,
-            html,
-            downTargetTop,
-            downMouseY,
-            isShow = true;
+    this.loadingTip = new function () {
+        var element,
+            valid = false;
 
-        function scrollTop(element, value) {
-            if (element.selector == "body") {
-                if (value != undefined) {
-                    $(document).scrollTop(value);
-                } else {
-                    return $(document).scrollTop();
-                }
-            } else {
-                if (value != undefined)
-                    element.scrollTop(value);
-                else
-                    return element.scrollTop();
-            }
-        }
-
-        function bodyTarget(dom) {
-            var contentHeight,
-                viewHeight
-            isSetTrackPosition = false;
-            this.contentHeight = function () {
-                return contentHeight;
-            }
-            this.viewHeight = function () {
-                return viewHeight;
-            }
-            this.setHeight = function () {
-                contentHeight = dom.scrollHeight;
-                viewHeight = window.innerHeight;
-            }
-            this.setTrackPosition = function (track) {
-                if (isSetTrackPosition) return true;
-                track.css("right", 0);
-                track.css("top", 0);
-                isSetTrackPosition = true;
-                return true;
-            }
-            this.bindMouseWheel = function () {
-                $(window).on("mousewheel", targetMouseWheel);
-            }
-            this.unbindMouseWheel = function () {
-                $(window).off("mousewheel", targetMouseWheel);
-            }
-        }
-
-        function otherTarget($t, dom) {
-            var contentHeight,
-                viewHeight;
-
-            this.contentHeight = function () {
-                return contentHeight;
-            }
-            this.viewHeight = function () {
-                return viewHeight;
-            }
-            this.setHeight = function () {
-                contentHeight = dom.scrollHeight;
-                viewHeight = $t.innerHeight();
-            }
-            this.setTrackPosition = function () {
-                return false;
-            }
-            this.bindMouseWheel = function () {
-                $t.on("mousewheel", targetMouseWheel);
-            }
-            this.unbindMouseWheel = function () {
-                $t.off("mousewheel", targetMouseWheel);
-            }
-        }
-
-        function setArrowPosition() {
-            var height = (targetHelper.viewHeight() - arrowHeight) * scrollTop(target) / (targetHelper.contentHeight() - targetHelper.viewHeight());
-            arrow.css("top", height);
-        }
-
-        function targetMouseWheel(e) {
-            var node = e.target,
-                delta = e.originalEvent.wheelDelta,
-                targetScrollTop,
-                overflowY;
-            while (node != e.currentTarget && node != null && node.tagName != "HTML" && node.tagName != "BODY") {
-                overflowY = node.style.overflowY;
-                if ((overflowY == "auto" || overflowY == "scroll") && node.clientHeight != node.scrollHeight) {
-                    if (delta > 0 && node.scrollTop > 0) {
-                        return true;
-                    }
-                    if (delta < 0 && node.scrollTop + node.clientHeight < node.scrollHeight) {
-                        return true;
-                    }
-                }
-                node = node.parentElement;
-            }
-
-            if (targetHelper.contentHeight() <= targetHelper.viewHeight()) return true;
-            targetScrollTop = scrollTop(target);
-            if (delta < 0) {
-                if (targetScrollTop >= (targetHelper.contentHeight() - targetHelper.viewHeight())) {
-                    return true;
-                }
-            } else {
-                if (targetScrollTop == 0) {
-                    return true;
-                }
-            }
-            scrollTop(target, targetScrollTop - delta);
-            setArrowPosition();
-            return false;
-        }
-
-        function htmlSelectStart() {
-            return false;
-        }
-
-        function arrowMouseDown(e) {
-            downMouseY = e.clientY;
-            downTargetTop = scrollTop(target);
-            html.on("selectstart", htmlSelectStart);
-            html.on("mousemove", htmlMouseMove);
-            html.on("mouseup", htmlMouseUp);
-            track.addClass("focus");
-        }
-
-        function htmlMouseUp() {
-            html.off("selectstart", htmlSelectStart);
-            html.off("mousemove", htmlMouseMove);
-            html.off("mouseup", htmlMouseUp);
-            track.removeClass("focus");
-        }
-
-        function htmlMouseMove(e) {
-            var per = (targetHelper.contentHeight() - targetHelper.viewHeight()) / (targetHelper.viewHeight() - arrowHeight)
-            scrollTop(target, downTargetTop - (downMouseY - e.clientY) * per);
-            setArrowPosition();
-        }
-
-        function reset() {
-            targetHelper.setHeight();
-            if (targetHelper.viewHeight() == 0 || targetHelper.contentHeight() <= targetHelper.viewHeight()) {
-                track.hide();
+        function initElement() {
+            if (element != null) {
                 return;
-            } else {
-                track.show();
             }
-            track.height(targetHelper.viewHeight());
-            if (!targetHelper.setTrackPosition(track)) {
-                track.css("left", target.innerWidth() - parseInt(target.css("padding-left")) - trackWidth);
-                track.css("top", -parseInt(target.css("padding-top")));
-            }
-            arrowHeight = track.height() * targetHelper.viewHeight() / targetHelper.contentHeight();
-            if (arrowHeight < 20) arrowHeight = 20;
-            arrow.height(arrowHeight);
-            setArrowPosition();
+            element = $("<div></div>").addClass("loading-background").addClass("box-background");
+            var dialog = $("<div></div>").addClass("loading-box").addClass("box-panel"),
+                text = $("<span></span>").text(config.text.loading);
+
+            dialog.append(text);
+            element.append($("<div></div>").addClass("layout-center").append($("<div></div>").addClass("layout-center-content").append(dialog)));
+            element.prependTo($("body"));
         }
-
-        target = $(target);
-        targetDom = target.get(0);
-        targetHelper = targetDom.tagName == "BODY" ? new bodyTarget(targetDom) : new otherTarget(target, targetDom);
-        html = $("html");
-        target.css("overflow", "hidden");
-        container = $("<div></div>").addClass("scrollbar-container");
-        track = $("<div></div>").addClass("scrollbar-track");
-        arrow = $("<div></div>").addClass("scrollbar-arrow");
-        container.append(track);
-        track.append(arrow);
-        target.prepend(container);
-        trackWidth = track.width();
-        reset();
-        _scrollbar.push(this);
-        track.mousedown(arrowMouseDown);
-        $(window).on("resize", reset);
-        targetHelper.bindMouseWheel();
-
         this.show = function () {
-            if (isShow) {
-                return;
-            }
-            container.show();
-            targetHelper.bindMouseWheel();
-            isShow = true;
-        }
-        this.hide = function () {
-            if (!isShow) {
-                return;
-            }
-            targetHelper.unbindMouseWheel();
-            container.hide();
-            isShow = false;
-        }
-        this.reset = function () {
-            reset();
-        }
-    }
-
-    this.resetScrollbar = function () {
-        for (var i = 0 ; i < _scrollbar.length; i++) {
-            _scrollbar[i].reset();
-        }
-    }
-
-    this.resetWindowScrollbar = function () {
-        if (_WindowScrollBar) {
-            _WindowScrollBar.reset();
-            return;
-        }
-        if (_canTouch == null) {
-            _canTouch = "ontouchmove" in document;
-        }
-        if (!_canTouch && _isReplacePCScrollBar) {
-            _WindowScrollBar = new $this.scrollbar("body");
-            setInterval(_WindowScrollBar.reset, 500);
-        }
-    }
-
-    function viewEvent() {
-        function events() {
-            var list = [];
-            this.add = function (fn) {
-                if (typeof (fn) != "function") throw new Error("fn is not a function");
-                list.push(fn);
-            }
-            this.execute = function (para) {
-                for (var i = 0; i < list.length; i++) {
-                    if (list[i](para) === false) return false;
-                }
-            }
-        }
-
-        this.load = new events();
-        this.unload = new events();
-        this.active = new events();
-        this.inactive = new events();
-    }
-
-    function viewEventParameter(node, name, level) {
-        this.node = node;
-        this.name = name;
-        this.level = level;
-    }
-
-    function linkManagement() {
-        var context = [];
-
-        function item(name, link, level, option) {
-            var eventParameter,
-                visible = true,
-                scrollTop = 0,
-                scrollLeft = 0,
-                localViewEvent;
-
-            this.link = link;
-            this.node = $("<div></div>").addClass(name + "-view").data("link", link);
-            this.valid = false;
-            eventParameter = new viewEventParameter(this.node, name, level);
-
-            this.hide = function () {
-                if (!this.valid || !visible) {
-                    return;
-                }
-                var win = $(window);
-                scrollTop = win.scrollTop();
-                scrollLeft = win.scrollLeft();
-                if (localViewEvent.inactive.execute(eventParameter) !== false) {
-                    _globalViewEvent.inactive.execute(eventParameter);
-                }
-                this.node.hide();
-                visible = false;
-            }
-
-            this.callLoadAndActive = function () {
-                if (localViewEvent.load.execute(eventParameter) !== false) {
-                    _globalViewEvent.load.execute(eventParameter);
-                }
-                if (localViewEvent && localViewEvent.active.execute(eventParameter) !== false) {
-                    _globalViewEvent.active.execute(eventParameter);
-                }
-            }
-
-            this.callInactiveAndUnload = function () {
-                if (localViewEvent.inactive.execute(eventParameter) !== false) {
-                    _globalViewEvent.inactive.execute(eventParameter);
-                }
-                if (localViewEvent && localViewEvent.unload.execute(eventParameter) !== false) {
-                    _globalViewEvent.unload.execute(eventParameter);
-                }
-            }
-
-            this.remove = function () {
-                if (this.valid && localViewEvent.inactive.execute(eventParameter) !== false) {
-                    _globalViewEvent.inactive.execute(eventParameter);
-                }
-                this.node.remove();
-                if (!this.valid) {
-                    return;
-                }
-                if (localViewEvent.unload.execute(eventParameter) !== false) {
-                    _globalViewEvent.unload.execute(eventParameter);
-                }
-                this.node = null;
-                this.valid = false;
-                localViewEvent = null;
-            }
-
-            this.show = function () {
-                if (!this.valid || visible) {
-                    return;
-                }
-                this.node.show();
-                if (localViewEvent.active.execute(eventParameter) !== false) {
-                    _globalViewEvent.active.execute(eventParameter);
-                }
-                $(window).scrollLeft(scrollLeft);
-                $(window).scrollTop(scrollTop);
-                visible = true;
-            }
-
-            this.activeEvent = function () {
-                if (!localViewEvent) {
-                    _globalViewEvent.active.execute(eventParameter);
-                    return;
-                }
-                if (localViewEvent.active.execute(eventParameter) !== false) {
-                    _globalViewEvent.active.execute(eventParameter);
-                }
-            }
-
-            this.inactiveEvent = function () {
-                if (!localViewEvent) {
-                    _globalViewEvent.inactive.execute(eventParameter);
-                    return;
-                }
-                if (localViewEvent.inactive.execute(eventParameter) !== false) {
-                    _globalViewEvent.inactive.execute(eventParameter);
-                }
-            }
-
-            this.setContext = function () {
-                _currentViewEvent = new viewEvent();
-
-                this.node.empty();
-                if (arguments.length == 1) {
-                    this.node.html(arguments[0]);
-                } else {
-                    for (var i = 0; i < arguments.length; i++) {
-                        this.node.append(arguments[i]);
-                    }
-                }
-
-                localViewEvent = _currentViewEvent;
-                this.valid = true;
-            }
-
-            this.getOption = function () {
-                return option;
-            }
-        }
-
-        this.push = function (name, link, option) {
-            context.push(new item(name, link, this.count() + 1, option));
-        }
-
-        this.pop = function () {
-            return context.pop();
-        }
-
-        this.last = function () {
-            return context[context.length - 1];
-        }
-
-        this.like = function (links) {
-            if (context.length == 0) return false;
-            for (var i = 0; i < context.length; i++) {
-                if (links.length == i) break;
-                if (context[i].link != links[i]) return false;
-            }
-            return true;
-        }
-
-        this.count = function () {
-            return context.length;
-        }
-
-        this.get = function (index) {
-            return context[index];
-        }
-
-        this.replace = function (index, name, link, option) {
-            var newItem = new item(name, link, index + 1, option);
-            context[index].node.after(newItem.node);
-            context[index].remove();
-            context[index] = newItem;
-        }
-
-        this.getBackLink = function () {
-            var link = new linkParser(this.getLinks());
-            link.pop();
-            return link.getContent();
-        }
-
-        this.getLink = function () {
-            var link = new linkParser(this.getLinks());
-            return link.getContent();
-        }
-
-        this.getLinks = function () {
-            var result = [],
-                i;
-            for (i = 0; i < context.length; i++) {
-                result.push(context[i].link);
-            }
-            return result;
-        }
-    }
-
-    this.box = function (className, isMiddle) {
-        var isInit = false,
-	        element,
-            core,
-	        store = [],
-	        current = null;
-
-        function close(event, fn) {
-            if (event && event.target != event.currentTarget) {
-                return;
-            }
-
-            element.stop(true);
-            element.fadeOut(store.length > 0 ? 1 : 200, function () {
-                $this.bodyManagement.shrink();
-                if (current == null) {
-                    if (fn) fn();
-                    return;
-                }
-
-                if (current.close) current.close();
-                current.node.remove();
-
-                if (store.length > 0) {
-                    current = store.pop();
-                    core.append(current.node);
-                    element.stop(true, true);
-                    element.fadeIn(0);
-                    if (fn) fn();
-                    return;
-                }
-
-                current = null;
-                if (fn) fn();
-            });
-        }
-        function initElement() {
-            if (isInit) {
-                return;
-            }
-            isInit = true;
-            element = $("<div></div>").addClass(className).addClass("box-background");
-            if (isMiddle) {
-                core = $("<div></div>").addClass("layout-center-content");
-                element.append($("<div></div>").addClass("layout-center").append(core));
-            } else {
-                core = element;
-            }
-            element.prependTo($("body"));
-            element.on("scroll", $this.dealScrollToVisibleLoading);
-        }
-
-        this.open = function (node, fnClose) {
             initElement();
-            if (current) {
-                if (current.node.data("type") == "message") {
-                    throw new Error("not allow show again after message show.");
-                }
-                store.push({ node: current.node.detach(), close: current.close });
-            }
-            $this.bodyManagement.expand();
-            current = { node: node, close: fnClose };
-            core.append(node);
+            if (valid) return this;
+            $webapp.bodyManagement.expand();
             element.stop(true, true);
-            element.fadeIn(200);
+            element.fadeIn(config.setting.loading_show_time);
+            valid = true;
+            return this;
         }
-
-        this.close = function (event, fn) {
-            close(event, fn);
-        }
-
-        this.clear = function () {
-            if (!current) {
-                return;
-            }
-            $this.bodyManagement.shrink();
-            if (current.close) current.close();
-            current.node.remove();
-            while (store.length > 0) {
-                current = store.pop();
-                core.append(current.node);
-                $this.bodyManagement.shrink();
-                if (current.close) current.close();
-                current.node.remove();
-            }
-            current = null;
-            element.hide();
-        }
-    }
-
-    _activeViewAreaManager = new function () {
-        var current,
-            stack = [];
-        this.push = function (view) {
-            stack.push(current);
-            current = view;
-        }
-        this.get = function () {
-            return current;
-        }
-        this.pop = function () {
-            if (stack.length == 1) {
-                throw new Error("error call");
-            }
-            current = stack.pop();
-            return current;
-        }
-    }
-    _messageBox = new $this.box("dialog-background", true);
-    _windowBox = new $this.box("window-background");
-    _modalBox = new function () {
-        var isInit = false,
-	        element,
-	        store = [],
-	        current = null;
-
-        function close(event, fn) {
-            if (event && event.target != event.currentTarget) {
-                return;
-            }
-
-            current.node.stop(true);
-            current.node.fadeOut(store.length > 0 ? 1 : 200, function () {
-                $this.bodyManagement.shrink();
-                if (current == null) {
-                    if (fn) fn();
-                    return;
-                }
-
-                if (current.close) current.close();
-                current.node.remove();
-
-                if (store.length > 0) {
-                    current = store.pop();
-                    current.node.stop(true, true);
-                    current.node.fadeIn(0);
-                    if (fn) fn();
-                    return;
-                }
-
-                current = null;
-                if (fn) fn();
-            });
-        }
-        function initElement() {
-            if (isInit) {
-                return;
-            }
-            isInit = true;
-
-            element = $("<div></div>").addClass("modal-areas");
-            element.prependTo($("body"));
-        }
-        function createNode(node) {
-            var container,
-                main;
-
-            container = $("<div></div>").addClass("modal-background").addClass("box-background");
-            main = $("<div></div>").addClass("layout-center-content")
-            main.append(node);
-            container.append($("<div></div>").addClass("layout-center").append(main));
-            container.appendTo(element);
-            container.on("click", function (e) {
-                if (e.currentTarget != e.target && e.currentTarget != e.target.parentElement) {
-                    return;
-                }
-                if ($(e.currentTarget).find(".force").length > 0) {
-                    return;
-                }
-                _modalViewArea.close();
-            });
-            return container;
-        }
-
-        this.open = function (node, fnClose) {
+        this.hide = function (fn) {
+            if (!valid) return this;
             initElement();
-            if (current) {
-                store.push({ node: current.node, close: current.close });
-            }
-            $this.bodyManagement.expand();
-
-            current = { node: createNode(node), close: fnClose };
-            current.node.stop(true, true);
-            current.node.fadeIn(200);
-        }
-
-        this.close = function (event, fn) {
-            close(event, fn);
-        }
-
-        this.clear = function () {
-            if (!current) {
-                return;
-            }
-            $this.bodyManagement.shrink();
-            if (current.close) current.close();
-            current.node.remove();
-            while (store.length > 0) {
-                current = store.pop();
-                $this.bodyManagement.shrink();
-                if (current.close) current.close();
-                current.node.remove();
-            }
-            current = null;
+            element.stop(true);
+            element.fadeOut(config.setting.loading_hide_time, function () {
+                $webapp.bodyManagement.shrink();
+                if (typeof (fn) == "function") fn();
+            });
+            valid = false;
+            return this;
         }
     }
 
     this.dialog = new function () {
+        var list = [];
         function elementBuilder() {
             var element = $("<div></div>").addClass("dialog-box").addClass("box-panel");
 
-            this.setHead = function (title) {
+            this.head = function (title) {
                 var header = $("<div></div>").addClass("dialog-header");
                 header.append($("<h4></h4>").text(title));
                 element.append(header);
             }
-            this.setBody = function (text) {
+            this.body = function (text) {
                 var body = $("<div></div>").addClass("dialog-body");
                 if (text.indexOf("\n") > -1) {
                     $.each(text.split("\n"), function (i, n) {
@@ -888,88 +1495,81 @@ window.oldmansoft.webapp = new (function () {
                 }
                 element.append(body);
             }
-            this.setFooter = function () {
+            this.footer = function (shield) {
                 var footer = $("<div></div>").addClass("dialog-footer");
 
-                function option(node) {
+                function returnOption(node) {
                     this.set = function (text, className) {
-                        var closeCallback,
+                        var closeCallback = new definition.action(),
                             button = $("<button></button>").text(text).addClass(className);
 
-                        button.click(function (event) {
-                            _messageBox.close(event, function () {
-                                if (closeCallback) closeCallback();
+                        button.click(function (e) {
+                            shield.close(e, function () {
+                                closeCallback.execute();
                             });
                         });
                         node.append(button);
                         return new function () {
                             this.setCallback = function (fn) {
-                                closeCallback = fn;
+                                closeCallback.add(fn);
                             }
                         }
                     }
                 }
                 element.append(footer);
-                return new option(footer);
+                return new returnOption(footer);
             }
-            this.get = function (type) {
-                element.data("type", type);
-                return element;
-            }
-            this.getElement = function () {
+            this.getNode = function () {
                 return element;
             }
         }
-        this.alert = function (content, title, fn) {
-            var okButton,
-                builder = new elementBuilder();
 
-            function option(button) {
-                this.onConfirm = function (fn) {
-                    console.warn("onConfirm is obsolete. commend use ok");
-                    button.setCallback(fn);
-                    return this;
+        this.custom = function (node) {
+            var shield = new definition.shield(".dialog-ares", node, true, "dialog-background"),
+                index = list.length;
+            list[index] = shield;
+            shield.event().close.before.add(function () {
+                delete list[index];
+            });
+            return new function () {
+                this.close = function (fn) {
+                    shield.close(null, fn);
                 }
+            }
+        }
+        this.alert = function (content, title) {
+            var okButton,
+                builder = new elementBuilder(),
+                shield,
+                index = list.length;
+
+            function returnOption(button) {
                 this.ok = function (fn) {
                     button.setCallback(fn);
                     return this;
                 }
             }
-            if (typeof title == "function") {
-                fn = title;
-                title = null;
-            }
             if (title) {
                 builder.setHead(title);
             }
-            builder.setBody(content);
-            okButton = builder.setFooter().set(_text.ok, "ok");
-            if (fn) {
-                console.warn("fn is obsolete. commend use ok");
-                okButton.setCallback(fn);
-            }
-            _messageBox.open(builder.get("alert"));
-            return new option(okButton);
+            builder.body(content);
+            shield = new definition.shield(".dialog-ares", builder.getNode(), true, "dialog-background");
+            list[index] = shield;
+            shield.event().close.before.add(function () {
+                delete list[index];
+            });
+            okButton = builder.footer(shield).set(config.text.ok, "ok");
+            return new returnOption(okButton);
         }
-        this.confirm = function (content, title, fnYes, fnNo) {
-            var yesButton,
-                noButton,
-                footer,
-                builder = new elementBuilder();
+        this.confirm = function (content, title) {
+            var footer,
+                builder = new elementBuilder(),
+                shield,
+                index = list.length;
 
-            function option(yesButton, noButton) {
-                this.onConfirm = function (fn) {
-                    console.warn("onConfirm is obsolete. commend use yes");
-                    yesButton.setCallback(fn);
-                    return this;
-                }
+            function returnOption(yesButton, noButton) {
                 this.yes = function (fn) {
                     yesButton.setCallback(fn);
-                    return this;
-                }
-                this.onCancel = function (fn) {
-                    console.warn("onCancel is obsolete. commend use no");
-                    noButton.setCallback(fn);
                     return this;
                 }
                 this.no = function (fn) {
@@ -977,85 +1577,46 @@ window.oldmansoft.webapp = new (function () {
                     return this;
                 }
             }
-            if (typeof title == "function") {
-                fnNo = fnYes;
-                fnYes = title;
-                title = null;
-            }
             if (title) {
-                builder.setHead(title);
+                builder.head(title);
             }
-            builder.setBody(content);
-            footer = builder.setFooter();
-            yesButton = footer.set(_text.yes, "yes");
-            if (fnYes) {
-                console.warn("fnYes is obsolete.");
-                yesButton.setCallback(fnYes);
-            }
-            noButton = footer.set(_text.no, "no");
-            if (fnNo) {
-                console.warn("fnNo is obsolete.");
-                noButton.setCallback(fnNo);
-            }
-            _messageBox.open(builder.get("confirm"));
-            return new option(yesButton, noButton);
+            builder.body(content);
+            shield = new definition.shield(".dialog-ares", builder.getNode(), true, "dialog-background");
+            list[index] = shield;
+            shield.event().close.before.add(function () {
+                delete list[index];
+            });
+            footer = builder.footer(shield);
+            return new returnOption(footer.set(config.text.yes, "yes"), footer.set(config.text.no, "no"));
         }
         this.message = function (content) {
-            var builder = new elementBuilder();
-            builder.setBody(content);
-            _messageBox.open(builder.get("message"));
+            var builder = new elementBuilder(),
+                custom;
+            builder.body(content);
+            custom = $webapp.dialog.custom(builder.getNode());
             return new function () {
                 this.close = function (fn) {
-                    _messageBox.close(null, fn);
+                    custom.close(fn);
                 }
                 this.change = function (text) {
                     builder.getElement().find(".dialog-body").text(text);
                 }
             }
         }
-    }
-
-    this.loadingTip = new function () {
-        var element;
-
-        function initElement() {
-            if (element != null) {
-                return;
+        this.clear = function () {
+            var i;
+            for (i in list) {
+                list[i].close();
             }
-            element = $("<div></div>").addClass("loading-background").addClass("box-background");
-            var dialog = $("<div></div>").addClass("loading-box").addClass("box-panel"),
-                text = $("<span></span>").text(_text.loading);
-
-            dialog.append(text);
-            element.append($("<div></div>").addClass("layout-center").append($("<div></div>").addClass("layout-center-content").append(dialog)));
-            element.prependTo($("body"));
-        }
-        this.show = function () {
-            initElement();
-            $this.bodyManagement.expand();
-            element.stop(true, true);
-            element.fadeIn(_setting.loading_show_time);
-            return new function () {
-                this.hide = function () {
-                    $this.loadingTip.hide();
-                }
-            }
-        }
-        this.hide = function () {
-            initElement();
-            element.stop(true);
-            element.fadeOut(_setting.loading_hide_time, function () {
-                $this.bodyManagement.shrink();
-            });
+            list = [];
         }
     }
 
     this.linker = new function () {
-        var initHashChange = false,
+        var inited = false,
             lastHash = null,
-            changeCallback = null,
-            changeCompleted = null,
-            changeCompletedParameters = null;
+            changeCallback = new definition.action(),
+            changeCompleted = null;
 
         function fixHref(href) {
             if (!href) return href;
@@ -1063,91 +1624,98 @@ window.oldmansoft.webapp = new (function () {
             return href;
         }
         function callLeave() {
-            changeCallback(lastHash);
+            changeCallback.execute(lastHash);
         }
         function hashChange() {
-            var href = new linkParser(window.location.hash).getContent();
-            if (lastHash == href) {
+            var hash = new util.linkParser(window.location.hash).getHash();
+            if (lastHash == hash) {
                 return;
             }
-            lastHash = href;
+            lastHash = hash;
             callLeave();
         }
 
-        this.setChangeCompleted = function (fn, parameters) {
+        this.setChangeCompleted = function (fn) {
+            if (typeof (fn) != "function") return;
             changeCompleted = fn;
-            changeCompletedParameters = parameters;
         }
-
         this.callChangeCompleted = function (isNewContent) {
             if (!changeCompleted) {
                 return;
             }
-            if (changeCompletedParameters == null) {
-                changeCompleted(isNewContent);
-            } else {
-                changeCompletedParameters.unshift(isNewContent);
-                changeCompleted.apply(null, changeCompletedParameters);
-            }
+            changeCompleted(isNewContent);
             changeCompleted = null;
-            changeCompletedParameters = null;
         }
-
         this.createHref = function (href) {
-            var hash = new linkParser(href).getContent(),
+            var hash = new util.linkParser(href).getHash(),
                 base = document.location.origin + document.location.pathname;
             if (hash == "") return base;
             return base + "#" + hash;
         }
-        this.modify = function (href) {
-            window.location.hash = href;
-            lastHash = new linkParser(href).getContent();
+        this.hrefs = function () {
+            return new util.linkParser(window.location.hash).getHrefs();
         }
-        this.hash = function (href) {
-            if (href == undefined) {
+        this.modify = function (hash) {
+            window.location.hash = hash;
+            lastHash = new util.linkParser(hash).getHash();
+        }
+        this.hash = function (hash) {
+            if (hash == undefined) {
                 return window.location.hash;
             }
 
-            window.location.hash = href;
-            if (href == lastHash) {
+            window.location.hash = hash;
+            if (hash == lastHash) {
                 callLeave();
             }
-            return href;
+            return hash;
         }
-        this.link = function (href) {
-            if (href == undefined) {
-                return _activeViewAreaManager.get().getLink();
+        this.link = function () {
+            if (arguments.length == 0) {
+                return variables.viewer.manager.get().href;
             }
-            href = linkEncode(href)
-            window.location.hash = href;
-            if (href == lastHash) {
+            
+            var link = new util.linkParser(),
+                hash,
+                i;
+            for (i = 0; i < arguments.length; i++) {
+                link.add(arguments[i]);
+            }
+            hash = link.getHash();
+            window.location.hash = hash;
+            if (hash == lastHash) {
                 callLeave();
             }
         }
         this.add = function (href) {
-            var link = new linkParser(window.location.hash);
-            link.push(href);
-            window.location.hash = link.getContent();
+            var link = new util.linkParser(window.location.hash);
+            link.add(href);
+            window.location.hash = link.getHash();
+        }
+        this.back = function () {
+            var link = new util.linkParser(window.location.hash);
+            if (link.count() == 1) {
+                return;
+            }
+            link.pop();
+            window.location.hash = link.getHash();
         }
         this.same = function (href) {
-            var link = new linkParser(window.location.hash);
-            link.pop();
-            link.push(href);
-            window.location.hash = link.getContent();
-            if (link.getContent() == lastHash) {
+            var link = new util.linkParser(window.location.hash);
+            link.last(href);
+            window.location.hash = link.getHash();
+            if (link.getHash() == lastHash) {
                 callLeave();
             }
         }
         this.refresh = function () {
             callLeave();
         }
-        this._init = function (fnChangeCall) {
-            if (initHashChange) {
-                return;
-            }
-            initHashChange = true;
+        this.onChange = function (fn) {
+            changeCallback.add(fn);
+            if (inited) return;
+            inited = true;
 
-            changeCallback = fnChangeCall;
             lastHash = fixHref(window.location.hash);
             if ("onhashchange" in window) {
                 window.onhashchange = hashChange;
@@ -1162,659 +1730,78 @@ window.oldmansoft.webapp = new (function () {
         }
     }
 
-    function modalViewArea() {
-        var links = new linkManagement(),
-            loadOption;
-
-        function setView(link, data, type, first, second) {
-            var last;
-
-            if (links.count() > 0) {
-                links.last().inactiveEvent();
-            } else {
-                _activeViewAreaManager.get().inactiveCurrent();
-                _activeViewAreaManager.push(_modalViewArea);
-            }
-
-            links.push("modal", link, { closed: loadOption.closed, closedParameters: loadOption.closedParameters, data: data, type: type });
-            last = links.last();
-            last.node.addClass("box-panel");
-            if (loadOption.force) last.node.addClass("force");
-            if (second == undefined) {
-                last.setContext(first);
-            } else {
-                last.setContext(first, second);
-            }
-            _modalBox.open(last.node, function () {
-                last.remove();
-            });
-            last.callLoadAndActive();
-            $this.dealScrollToVisibleLoading();
-        }
-
-        function setOldView(first, second) {
-            if (links.count() == 0) {
-                return;
-            }
-
-            var last = links.last();
-            last.callInactiveAndUnload();
-            if (second == undefined) {
-                last.setContext(first);
-            } else {
-                last.setContext(first, second);
-            }
-            last.callLoadAndActive();
-            $this.dealScrollToVisibleLoading();
-        }
-
-        this.load = function (link, data, type) {
-            var loading = $this.loadingTip.show(),
-                loadPath;
-
-            loadPath = getAbsolutePath(link, getPathHasAbsolutePathFromArray(links.getLinks(), links.count() - 2, _mainViewArea.getDefaultLink()), _mainViewArea.getDefaultLink());
-            $.ajax({
-                mimeType: 'text/html; charset=' + _setting.server_charset,
-                url: loadPath,
-                data: data,
-                type: type,
-                timeout: _setting.timeover
-            }).done(function (content, textStatus, jqXHR) {
-                loading.hide();
-                var json = jqXHR.getResponseHeader("X-Responded-JSON"),
-	                responded;
-
-                if (json) {
-                    responded = JSON.parse(json);
-                    if (responded.status == 401) {
-                        if (!_fnOnUnauthorized(loadPath, responded.headers.location)) {
-                            if (responded.headers && responded.headers.location) {
-                                document.location = responded.headers.location;
-                            }
-                        }
-                        return;
-                    }
-                }
-
-                if (isHtmlDocument(content)) {
-                    alert("You try to load wrong content: " + loadPath);
-                    return;
-                }
-
-                if (loadOption.refresh) setOldView(content);
-                else setView(link, data, type, content);
-                if (loadOption.loaded) loadOption.loaded();
-            }).fail(function (jqXHR, textStatus, errorThrown) {
-                var onLoadTimeoutResult,
-                    response,
-                    title,
-                    content;
-                loading.hide();
-                if (jqXHR.status == 401) {
-                    _fnOnUnauthorized(loadPath);
-                } else if (jqXHR.status == 0 && textStatus == "timeout") {
-                    onLoadTimeoutResult = _fnOnLoadTimeout();
-                    if (onLoadTimeoutResult) {
-                        if (loadOption.refresh) setOldView(onLoadTimeoutResult);
-                        else setView(link, data, type, onLoadTimeoutResult);
-                        return;
-                    }
-                }
-                response = $(jqXHR.responseText);
-                title = $("<h4></h4>").text(errorThrown);
-                content = $("<pre></pre>");
-
-                if (response[11] != null && response[11].nodeType == 8) {
-                    content.text(response[11].data);
-                } else {
-                    content.text(response.eq(1).text());
-                }
-
-                if (loadOption.refresh) setOldView(title, content);
-                else setView(link, data, type, title, content);
-            });
-            loadOption = { closed: null, closedParameters: null, loaded: null, refresh: false, force: false };
-            return loadOption;
-        }
-
-        this.reload = function () {
-            var linkOption = links.last().getOption(),
-                option = this.load(links.last().link, linkOption.data, linkOption.type);
-            option.refresh = true;
-        }
-
-        this.close = function () {
-            var closeCompleted = null,
-                parameters = Array.from(arguments);
-            _modalBox.close(null, function () {
-                var option = links.pop().getOption(),
-                    current = links.last();
-                if (current) {
-                    current.activeEvent();
-                } else {
-                    _activeViewAreaManager.pop();
-                    _activeViewAreaManager.get().activeCurrent();
-                }
-                if (option.closed) {
-                    if (option.closedParameters != null) {
-                        if (parameters.length > 0) option.closedParameters = option.closedParameters.concat(parameters);
-                        option.closed.apply(null, option.closedParameters);
-                    } else {
-                        option.closed.apply(null, parameters);
-                    }
-                }
-                if (closeCompleted) closeCompleted(false);
-            });
-            return new function () {
-                this.completed = function (fn) {
-                    closeCompleted = fn;
-                }
-            }
-        }
-
-        this.replace = function (link, data) {
-            var last = links.last(),
-                linkOption = last.getOption(),
-                option;
-            last.node.data("link", link);
-            last.link = link;
-            linkOption.data = data;
-            linkOption.type = data ? "POST" : "GET";
-            option = this.load(link, linkOption.data, linkOption.type);
-            option.refresh = true;
-        }
-
-        this.clear = function () {
-            _modalBox.clear();
-            if (links.count() > 0) {
-                links = new linkManagement();
-                _activeViewAreaManager.pop();
-            }
-        }
-
-        this.hasContent = function () {
-            return links.count() > 0;
-        }
-
-        this.getNode = function () {
-            return links.last().node;
-        }
-
-        this.getLink = function () {
-            return links.last().link;
-        }
+    this.redirect = function (href, data) {
+        return variables.viewer.manager.get().redirect(href, data);
     }
 
-    function openViewArea() {
-        var links = new linkManagement(),
-            loadOption;
-
-        function setView(link, data, type, first, second) {
-            var last;
-
-            if (links.count() > 0) {
-                links.last().hide();
-            } else {
-                _activeViewAreaManager.get().inactiveCurrent();
-                _activeViewAreaManager.push(_openViewArea);
-            }
-
-            links.push("open", link, { closed: loadOption.closed, closedParameters: loadOption.closedParameters, data: data, type: type });
-            last = links.last();
-            if (second == undefined) {
-                last.setContext(first);
-            } else {
-                last.setContext(first, second);
-            }
-            _windowBox.open(last.node, function () {
-                last.remove();
-            });
-            last.callLoadAndActive();
-            $this.dealScrollToVisibleLoading();
-        }
-
-        function setOldView(first, second) {
-            if (links.count() == 0) {
-                return;
-            }
-
-            var last = links.last();
-            last.callInactiveAndUnload();
-            if (second == undefined) {
-                last.setContext(first);
-            } else {
-                last.setContext(first, second);
-            }
-            last.callLoadAndActive();
-            $this.dealScrollToVisibleLoading();
-        }
-
-        this.load = function (link, data, type) {
-            var loading = $this.loadingTip.show(),
-                loadPath;
-
-            _modalViewArea.clear();
-
-            loadPath = getAbsolutePath(link, getPathHasAbsolutePathFromArray(links.getLinks(), links.count() - 2, _mainViewArea.getDefaultLink()), _mainViewArea.getDefaultLink());
-            $.ajax({
-                mimeType: 'text/html; charset=' + _setting.server_charset,
-                url: loadPath,
-                data: data,
-                type: type,
-                timeout: _setting.timeover
-            }).done(function (content, textStatus, jqXHR) {
-                loading.hide();
-                var json = jqXHR.getResponseHeader("X-Responded-JSON"),
-	                responded;
-
-                if (json) {
-                    responded = JSON.parse(json);
-                    if (responded.status == 401) {
-                        if (!_fnOnUnauthorized(loadPath, responded.headers.location)) {
-                            if (responded.headers && responded.headers.location) {
-                                document.location = responded.headers.location;
-                            }
-                        }
-                        return;
-                    }
-                }
-
-                if (isHtmlDocument(content)) {
-                    alert("You try to load wrong content: " + loadPath);
-                    return;
-                }
-
-                if (loadOption.refresh) setOldView(content);
-                else setView(link, data, type, content);
-                if (loadOption.loaded) loadOption.loaded();
-            }).fail(function (jqXHR, textStatus, errorThrown) {
-                var onLoadTimeoutResult,
-                    response,
-                    title,
-                    content;
-                loading.hide();
-                if (jqXHR.status == 401) {
-                    _fnOnUnauthorized(loadPath);
-                } else if (jqXHR.status == 0 && textStatus == "timeout") {
-                    onLoadTimeoutResult = _fnOnLoadTimeout();
-                    if (onLoadTimeoutResult) {
-                        if (loadOption.refresh) setOldView(onLoadTimeoutResult);
-                        else setView(link, data, type, onLoadTimeoutResult);
-                        return;
-                    }
-                }
-                response = $(jqXHR.responseText);
-                title = $("<h4></h4>").text(errorThrown);
-                content = $("<pre></pre>");
-
-                if (response[11] != null && response[11].nodeType == 8) {
-                    content.text(response[11].data);
-                } else {
-                    content.text(response.eq(1).text());
-                }
-
-                if (loadOption.refresh) setOldView(title, content);
-                else setView(link, data, type, title, content);
-            });
-            loadOption = { closed: null, closedParameters: null, loaded: null, refresh: false };
-            return loadOption;
-        }
-
-        this.reload = function () {
-            var linkOption = links.last().getOption(),
-                option = this.load(links.last().link, linkOption.data, linkOption.type);
-            option.refresh = true;
-        }
-
-        this.close = function () {
-            var closeCompleted = null,
-                parameters = Array.from(arguments);
-            _windowBox.close(null, function () {
-                var option = links.pop().getOption(),
-                    current = links.last();
-                if (current) {
-                    current.show();
-                } else {
-                    _activeViewAreaManager.pop();
-                    _mainViewArea.activeCurrent();
-                }
-                if (option.closed) {
-                    if (option.closedParameters != null) {
-                        if (parameters.length > 0) option.closedParameters = option.closedParameters.concat(parameters);
-                        option.closed.apply(null, option.closedParameters);
-                    } else {
-                        option.closed.apply(null, parameters);
-                    }
-                }
-                if (closeCompleted) closeCompleted(false);
-            });
-            return new function () {
-                this.completed = function (fn) {
-                    closeCompleted = fn;
-                }
-            }
-        }
-
-        this.replace = function (link, data) {
-            var last = links.last(),
-                linkOption = last.getOption(),
-                option;
-            last.node.data("link", link);
-            last.link = link;
-            linkOption.data = data;
-            linkOption.type = data ? "POST" : "GET";
-            option = this.load(link, linkOption.data, linkOption.type);
-            option.refresh = true;
-        }
-
-        this.clear = function () {
-            _windowBox.clear();
-            if (links.count() > 0) {
-                links = new linkManagement();
-                _activeViewAreaManager.pop();
-            }
-        }
-
-        this.activeCurrent = function () {
-            links.last().activeEvent();
-        }
-
-        this.inactiveCurrent = function () {
-            links.last().inactiveEvent();
-        }
-
-        this.hasContent = function () {
-            return links.count() > 0;
-        }
-
-        this.getNode = function () {
-            return links.last().node;
-        }
-
-        this.getLink = function () {
-            return links.last().link;
-        }
+    this.openWindow = function (href, data) {
+        return variables.viewer.window.open(href, data);
     }
 
-    function mainViewArea(viewNodeSelector, link) {
-        var loadId = 0,
-            element = null,
-            defaultLink = link,
-            links = new linkManagement(),
-            firstLoadContent = true;
-
-        function setView(first, second) {
-            var last;
-
-            last = links.last();
-            if (second == undefined) {
-                last.setContext(first);
-            } else {
-                last.setContext(first, second);
-            }
-            last.callLoadAndActive();
-            $this.resetWindowScrollbar();
-            $(window).scrollTop(0);
-            $this.dealScrollToVisibleLoading();
-        }
-
-        function loadContent(link, baseLink, loadContentCompleted, loadCompleted) {
-            var currentId = ++loadId,
-                loading = null,
-                loadPath = getAbsolutePath(link, baseLink, defaultLink);
-
-            if (_hideMainViewFirstLoading) {
-                _hideMainViewFirstLoading = false;
-            } else {
-                loading = $this.loadingTip.show();
-            }
-
-            $.ajax({
-                mimeType: 'text/html; charset=' + _setting.server_charset,
-                url: loadPath,
-                type: 'GET',
-                timeout: _setting.timeover
-            }).done(function (data, textStatus, jqXHR) {
-                if (currentId != loadId) {
-                    return;
-                }
-                if (loading) loading.hide();
-
-                var json = jqXHR.getResponseHeader("X-Responded-JSON"),
-                    responded;
-
-                if (json) {
-                    responded = JSON.parse(json);
-                    if (responded.status == 401) {
-                        if (!_fnOnUnauthorized(loadPath, responded.headers.location)) {
-                            if (responded.headers && responded.headers.location) {
-                                document.location = responded.headers.location;
-                            }
-                        }
-                        return;
-                    }
-                }
-
-                if (isHtmlDocument(data)) {
-                    alert("You try to load wrong content: " + loadPath);
-                    return;
-                }
-                loadContentCompleted();
-                setView(data);
-                if (loadCompleted) loadCompleted(true);
-            }).fail(function (jqXHR, textStatus, errorThrown) {
-                var onLoadTimeoutResult,
-                    response,
-                    title,
-                    content;
-                if (currentId != loadId) {
-                    return;
-                }
-                if (loading) loading.hide();
-
-                if (jqXHR.status == 401) {
-                    _fnOnUnauthorized(loadPath);
-                } else if (jqXHR.status == 0 && textStatus == "timeout") {
-                    onLoadTimeoutResult = _fnOnLoadTimeout();
-                    if (onLoadTimeoutResult) {
-                        loadContentCompleted();
-                        setView(onLoadTimeoutResult);
-                        return;
-                    }
-                }
-                response = $(jqXHR.responseText);
-                title = $("<h4></h4>").text(errorThrown);
-                content = $("<pre></pre>");
-
-                if (response[11] != null && response[11].nodeType == 8) {
-                    content.text(response[11].data);
-                } else {
-                    content.text(response.eq(1).text());
-                }
-                loadContentCompleted();
-                setView(title, content);
-            });
-        }
-
-        this.load = function (link, loadCompleted) {
-            var hrefs,
-                i;
-            if (element == null) element = $(viewNodeSelector);
-            if (element.is("body")) throw new Error("viewNode can't be <body>");
-            hrefs = new linkParser(link).getLinks();
-            _modalViewArea.clear();
-            _openViewArea.clear();
-            _messageBox.clear();
-
-            if (links.count() > hrefs.length && links.like(hrefs) && links.get(hrefs.length - 1).valid) {
-                for (i = links.count() - 1; i > hrefs.length - 1; i--) {
-                    links.pop().remove();
-                }
-                links.last().show();
-                $this.resetWindowScrollbar();
-                if (loadCompleted) loadCompleted(false);
-                return;
-            }
-            loadContent(hrefs[hrefs.length - 1], getPathHasAbsolutePathFromArray(hrefs, hrefs.length - 2, defaultLink), function () {
-                var i,
-                    linksCount;
-
-                if (firstLoadContent) {
-                    element.empty();
-                    firstLoadContent = false;
-                }
-                if (links.count() > hrefs.length && links.like(hrefs)) {
-                    for (i = links.count() - 1; i > hrefs.length - 1; i--) {
-                        links.pop().remove();
-                    }
-                } else {
-                    linksCount = links.count();
-                    for (i = linksCount - 1; i > hrefs.length - 1; i--) {
-                        links.pop().remove();
-                    }
-                    for (i = 0; i < hrefs.length; i++) {
-                        if (linksCount > i) {
-                            if (links.get(i).link != hrefs[i] || (linksCount == i + 1 && hrefs.length == linksCount)) {
-                                links.replace(i, "main", hrefs[i], { baseLink: getPathHasAbsolutePathFromArray(hrefs, i - 1, defaultLink) });
-                            } else {
-                                links.get(i).hide();
-                            }
-                        } else {
-                            links.push("main", hrefs[i], { baseLink: getPathHasAbsolutePathFromArray(hrefs, i - 1, defaultLink) });
-                            element.append(links.last().node);
-                        }
-                    }
-                }
-            }, loadCompleted);
-        }
-
-        this.reload = function () {
-            loadContent(links.last().link, links.last().getOption().baseLink, function () {
-                links.last().callInactiveAndUnload();
-            });
-        }
-
-        this.close = function () {
-            var closeCompleted = null,
-                parameters = Array.from(arguments);
-            if (links.count() > 1) {
-                if (links.get(links.count() - 2).valid) {
-                    links.pop().remove();
-                    $this.linker.modify(links.getLink());
-                    links.last().show();
-                    $this.resetWindowScrollbar();
-                    setTimeout(function () {
-                        parameters.unshift(false);
-                        if (closeCompleted) closeCompleted.apply(null, parameters);
-                    }, 1);
-                } else {
-                    setTimeout(function () {
-                        $this.linker.setChangeCompleted(closeCompleted, parameters);
-                        $this.linker.hash(links.getBackLink());
-                    }, 1);
-                }
-            }
-            return new function () {
-                this.completed = function (fn) {
-                    closeCompleted = fn;
-                }
-            }
-        }
-
-        this.replace = function (link) {
-            $this.linker.same(link);
-        }
-
-        this.getElement = function () {
-            return element;
-        }
-
-        this.setElement = function (nodeSelector) {
-            return element = $(nodeSelector);
-        }
-
-        this.getDefaultLink = function () {
-            return defaultLink;
-        }
-
-        this.setDefaultLink = function (link) {
-            defaultLink = link;
-        }
-
-        this.activeCurrent = function () {
-            links.last().activeEvent();
-        }
-
-        this.inactiveCurrent = function () {
-            links.last().inactiveEvent();
-        }
-
-        this.getLinks = function () {
-            return links.getLinks();
-        }
-
-        this.hasContent = function () {
-            return links.count() > 0;
-        }
-
-        this.getNode = function () {
-            return links.last().node;
-        }
-
-        this.getLink = function () {
-            return links.last().link;
-        }
+    this.modalWindow = function (href, data) {
+        return variables.viewer.window.modal(href, data);
     }
 
-    this.current = function () {
-        return {
-            node: _activeViewAreaManager.get().getNode(),
-            link: _activeViewAreaManager.get().getLink(),
-            view: _activeViewAreaManager.get()
-        };
+    this.viewClose = function () {
+        return variables.viewer.manager.get().close();
     }
 
-    this.currentViewHasContent = function () {
-        return _activeViewAreaManager.get().hasContent();
+    this.viewReload = function (fn) {
+        return variables.viewer.manager.get().reload(fn);
     }
 
-    this.event = function () {
+    this.viewEvent = function () {
         return new function () {
             this.onLoad = function (fn) {
-                _currentViewEvent.load.add(fn);
+                variables.event.loadedView.load.add(fn);
                 return this;
             }
-
             this.onUnload = function (fn) {
-                _currentViewEvent.unload.add(fn);
+                variables.event.loadedView.unload.add(fn);
                 return this;
             }
-
             this.onActive = function (fn) {
-                _currentViewEvent.active.add(fn);
+                variables.event.loadedView.active.add(fn);
                 return this;
             }
-
             this.onInactive = function (fn) {
-                _currentViewEvent.inactive.add(fn);
+                variables.event.loadedView.inactive.add(fn);
                 return this;
             }
         }
     }
 
-    this.viewClose = function (parameter) {
-        return _activeViewAreaManager.get().close(parameter);
+    this.currentViewNode = function () {
+        var view = variables.viewer.manager.get().getView();
+        if (view == null) return null;
+        return view.node;
     }
 
-    this.viewReload = function () {
-        _activeViewAreaManager.get().reload();
+    this.currentViewNodeFind = function (selector) {
+        return $webapp.currentViewNode().find(selector);
+    }
+
+    this.form = util.form;
+
+    this.resetWindowScrollBar = function () {
+        if (variables.windowScrollBar) {
+            variables.windowScrollBar.reset();
+            return;
+        }
+        if ("ontouchmove" in document) {
+            return;
+        }
+        if (!variables.replacePCScrollBar) {
+            return;
+        }
+        variables.windowScrollBar = new definition.scrollBar("body");
     }
 
     this.dealScrollToVisibleLoading = function (rangeNode) {
         var loading,
-	        src,
+            src,
             top;
-        if (!$this.currentViewHasContent()) return;
+        if (!$webapp.currentViewNode()) return;
 
         if (rangeNode && typeof (rangeNode.find) == "function") {
             loading = rangeNode.find(".webapp-loading:visible").first();
@@ -1822,8 +1809,8 @@ window.oldmansoft.webapp = new (function () {
             loading = $(".webapp-loading:visible").first();
         }
 
-        if ($app.current().node.hasClass("open-view")) {
-            top = -$app.current().node.position().top;
+        if ($webapp.currentViewNode().hasClass("open-view")) {
+            top = -$webapp.currentViewNode().position().top;
         } else {
             top = $(window).scrollTop();
         }
@@ -1837,277 +1824,70 @@ window.oldmansoft.webapp = new (function () {
             $.get(src, function (data) {
                 loading.before(data);
                 loading.remove();
-                for (var i = 0; i < _visibleLoadingCompleted.length; i++) {
-                    if (_visibleLoadingCompleted[i]() === false) return false;
-                }
-                $this.resetWindowScrollbar();
-                $this.dealScrollToVisibleLoading(rangeNode);
+                $webapp.refresh(rangeNode);
+                variables.event.visibleLoaded.action();
             });
         }
     }
 
-    function dealTouchMove(e) {
-        var path,
-            i,
-            isCancel = true;
-
-        if ($("body").hasClass("layout-expanded")) {
-            path = e.originalEvent.path;
-            if (!path) return;
-            for (i = 0; i < path.length; i++) {
-                if (path[i].tagName == "BODY") break;
-                if (path[i].scrollHeight > path[i].clientHeight) {
-                    isCancel = false;
-                    break;
-                }
-            }
-            if (isCancel) {
-                e.preventDefault();
-            }
-        }
+    this.refresh = function (range) {
+        variables.event.refresh.execute(range);
     }
 
-    _dealHrefTarget = {
-        _base: function (href) {
-            $this.linker.link(href);
-        },
-        _link: function (href) {
-            $this.linker.link(href);
-        },
-        _add: function (href) {
-            $this.linker.add(href);
-        },
-        _same: function (href) {
-            $this.linker.same(href);
-        },
-        _open: function (href, caller) {
-            $this.open(href, caller.attr("data-data"));
-        },
-        _modal: function (href, caller) {
-            $this.modal(href, caller.attr("data-data"));
-        }
-    }
-
-    this.configTarget = function (fn) {
-        if (typeof fn == "function") fn(_dealHrefTarget);
-    }
-
-    this.getDealHrefTarget = function () {
-        return _dealHrefTarget;
-    }
-
-    this.hashes = function () {
-        return _mainViewArea.getLinks();
-    }
-
-    this.open = function (href, data) {
-        var option;
-        if (data) {
-            option = _openViewArea.load(href, data, 'POST');
-        } else {
-            option = _openViewArea.load(href, data, 'GET');
-        }
+    this.configEvent = function () {
         return new function () {
-            this.closed = function (fn) {
-                option.closed = fn;
-                if (arguments.length > 1) {
-                    option.closedParameters = [];
-                    for (var i = 1; i < arguments.length; i++) {
-                        option.closedParameters.push(arguments[i]);
-                    }
-                }
+            this.refresh = function (fn) {
+                variables.event.refresh.add(fn);
             }
-            this.loaded = function (fn) {
-                option.loaded = fn;
+            this.formDealCustomized = function (fn) {
+                variables.event.formDealCustomized.add(fn);
             }
         }
-    }
-
-    this.modal = function (href, data) {
-        var option;
-        if (data) {
-            option = _modalViewArea.load(href, data, 'POST');
-        } else {
-            option = _modalViewArea.load(href, data, 'GET');
-        }
-        return new function () {
-            this.closed = function (fn) {
-                option.closed = fn;
-                if (arguments.length > 1) {
-                    option.closedParameters = [];
-                    for (var i = 1; i < arguments.length; i++) {
-                        option.closedParameters.push(arguments[i]);
-                    }
-                }
-            }
-            this.loaded = function (fn) {
-                option.loaded = fn;
-            }
-            this.force = function (b) {
-                option.force = b;
-            }
-        }
-    }
-
-    this.find = function (selector) {
-        return $this.current().node.find(selector);
     }
 
     this.configSetting = function (fn) {
-        if (typeof fn == "function") fn(_setting);
+        if (typeof (fn) == "function") fn(config.setting);
     }
 
     this.configText = function (fn) {
-        if (typeof fn == "function") fn(_text);
+        if (typeof (fn) == "function") fn(config.text);
     }
 
-    this.option = function () {
-        return _initialization_option;
+    this.configTarget = function (fn) {
+        if (typeof (fn) == "function") fn(variables.hrefTargetDealer);
     }
 
     this.initialled = function (fn) {
-        if (typeof fn != "function") return;
-        _initialledEvents.push(fn);
+        variables.event.initialled.add(fn);
     }
 
-    this.initialization = function (viewNodeSelector, defaultLink) {
-        function option(main) {
-            this.viewNode = function (nodeSelector) {
-                if (!nodeSelector) return main.getElement();
-                main.setElement(nodeSelector);
-                return this;
-            }
-            this.defaultLink = function (link) {
-                if (!link) return main.getDefaultLink();
-                main.setDefaultLink(link);
-                return this;
-            }
-            this.unauthorized = function (fn) {
-                _fnOnUnauthorized = fn;
-                return this;
-            }
-            this.loadTimeout = function (fn) {
-                _fnOnLoadTimeout = fn;
-                return this;
-            }
-            this.dealLinkEmptyTarget = function (b) {
-                if (b == undefined) return _isDealLinkEmptyTarget;
-                _isDealLinkEmptyTarget = b;
-                return this;
-            }
-            this.replacePCScrollBar = function (b) {
-                _isReplacePCScrollBar = b;
-                return this;
-            }
-            this.viewLoaded = function (fn) {
-                _globalViewEvent.load.add(fn);
-                return this;
-            }
-            this.viewActived = function (fn) {
-                _globalViewEvent.active.add(fn);
-                return this;
-            }
-            this.viewInactived = function (fn) {
-                _globalViewEvent.inactive.add(fn);
-                return this;
-            }
-            this.viewUnloaded = function (fn) {
-                _globalViewEvent.unload.add(fn);
-                return this;
-            }
-            this.visibleLoadingCompleted = function (fn) {
-                if (typeof (fn) != "function") throw new Error("fn is not a function");
-                _visibleLoadingCompleted.push(fn);
-                return this;
-            }
-        }
-
-        if (!!window.ActiveXObject || "ActiveXObject" in window) {
-            $.ajaxSetup({ cache: false });
-        }
-        $(document).on("click", "a", function (e) {
-            var target = $(this).attr("target"),
-                href = $(this).attr('href');
-
-            if (href == '#') {
-                e.preventDefault();
-                return;
-            }
-
-            if (!target) {
-                if (!_isDealLinkEmptyTarget) {
-                    return;
-                }
-                e.preventDefault();
-                _dealHrefTarget._link(href);
-                return;
-            }
-            if (target == "_none") {
-                return;
-            }
-            if (_dealHrefTarget[target]) {
-                e.preventDefault();
-                _dealHrefTarget[target](href, $(this));
-            }
-        });
-        $(document).on("click", ".webapp-close", function (e) {
-            e.preventDefault();
-            $this.viewClose($(this).attr("data-close"));
-        });
-        $(window).on("scroll", $this.dealScrollToVisibleLoading);
-        $(window).on("resize", $this.dealScrollToVisibleLoading);
-        $(document).on("touchmove", dealTouchMove);
-
-        _globalViewEvent = new viewEvent();
-        _mainViewArea = new mainViewArea(viewNodeSelector, defaultLink);
-        _openViewArea = new openViewArea();
-        _modalViewArea = new modalViewArea();
-        _activeViewAreaManager.push(_mainViewArea);
-        _initialization_option = new option(_mainViewArea);
-        for (var i in _initialledEvents) {
-            _initialledEvents[i]();
-        }
-        return _initialization_option;
-    }
-
-    this.init = function (viewNodeSelector, defaultLink, hideFirstLoading) {
-        var result = $this.initialization(viewNodeSelector, defaultLink);
-        if (hideFirstLoading) _hideMainViewFirstLoading = true;
-        $this.linker._init(function (link) {
-            _mainViewArea.load(link, $this.linker.callChangeCompleted);
-        });
-        return result;
-    }
-
-    this.setup = function (mainViewSelector, defaultLink, hideFirstLoading) {
-        if (!_calledSetup) {
-            _calledSetup = true;
+    this.setup = function (mainViewSelector, defaultHref, hideFirstLoading) {
+        if (!variables.hasSetup) {
+            variables.hasSetup = true;
         } else {
             throw new Error("Has been setup");
         }
-        var result = $this.initialization(mainViewSelector, defaultLink);
+        var result = util.initialization(mainViewSelector, defaultHref);
         $(function () {
-            if (hideFirstLoading) _hideMainViewFirstLoading = true;
-            $this.linker._init(function (link) {
-                _mainViewArea.load(link, $this.linker.callChangeCompleted);
-            });
+            if (hideFirstLoading) variables.hideMainViewFirstLoadingTips = true;
+            $webapp.linker.onChange(variables.viewer.main.linkerChange);
         });
         return result;
     }
 
-    this.setupLayout = function (layoutSelector, layoutLink, mainViewSelector, defaultLink) {
-        if (!_calledSetup) {
-            _calledSetup = true;
+    this.setupLayout = function (layoutSelector, layoutHref, mainViewSelector, defaultHref) {
+        if (!variables.hasSetup) {
+            variables.hasSetup = true;
         } else {
             throw new Error("Has been setup");
         }
-        var result = $this.initialization(mainViewSelector, defaultLink);
+        var result = util.initialization(mainViewSelector, defaultHref);
         $(function () {
             $.ajax({
-                mimeType: 'text/html; charset=' + _setting.server_charset,
-                url: layoutLink,
+                mimeType: 'text/html; charset=' + config.setting.server_charset,
+                url: layoutHref,
                 type: 'GET',
-                timeout: _setting.timeover
+                timeout: config.setting.timeover
             }).done(function (data, textStatus, jqXHR) {
                 var json = jqXHR.getResponseHeader("X-Responded-JSON"),
                     responded;
@@ -2115,7 +1895,7 @@ window.oldmansoft.webapp = new (function () {
                 if (json) {
                     responded = JSON.parse(json);
                     if (responded.status == 401) {
-                        if (!_fnOnUnauthorized(layoutLink, responded.headers.location)) {
+                        if (variables.event.unauthorized.execute(layoutHref, responded.headers ? responded.headers.location : null) !== false) {
                             if (responded.headers && responded.headers.location) {
                                 document.location = responded.headers.location;
                             }
@@ -2124,27 +1904,23 @@ window.oldmansoft.webapp = new (function () {
                     }
                 }
 
-                if (isHtmlDocument(data)) {
-                    alert("You try to load wrong content: " + layoutLink);
+                if (util.isHtmlDocument(data)) {
+                    alert("You try to load wrong content: " + layoutHref);
                     return;
                 }
                 $(layoutSelector).html(data).children().unwrap();
-                _hideMainViewFirstLoading = true;
-                $this.linker._init(function (link) {
-                    _mainViewArea.load(link, $this.linker.callChangeCompleted);
-                });
+                variables.hideMainViewFirstLoadingTips = true;
+                $webapp.linker.onChange(variables.viewer.main.linkerChange);
             }).fail(function (jqXHR, textStatus, errorThrown) {
-                var onLoadTimeoutResult;
                 if (jqXHR.status == 401) {
-                    _fnOnUnauthorized(layoutLink);
-                } else if (jqXHR.status == 0 && textStatus == "timeout") {
-                    onLoadTimeoutResult = _fnOnLoadTimeout();
-                    if (onLoadTimeoutResult) {
-                        $(layoutSelector).html(onLoadTimeoutResult).children().unwrap();
+                    if (variables.event.unauthorized.execute(layoutHref) === false) {
                         return;
                     }
+                } else if (jqXHR.status == 0 && textStatus == "timeout") {
+                    variables.event.loadTimeout.execute($(layoutSelector));
+                    return;
                 }
-                $this.dialog.alert(_text.load_layout_error, errorThrown).ok(function () {
+                $webapp.dialog.alert(config.text.load_layout_error, errorThrown).ok(function () {
                     document.location.reload();
                 });
             });
@@ -2153,28 +1929,27 @@ window.oldmansoft.webapp = new (function () {
     }
 
     window.$app = {
-        configSetting: $this.configSetting,
-        configText: $this.configText,
-        alert: $this.dialog.alert,
-        confirm: $this.dialog.confirm,
-        message: $this.dialog.message,
-        loading: $this.loadingTip.show,
-        loadScript: $this.scriptLoader.load,
-        href: $this.linker.createHref,
-        hash: $this.linker.hash,
-        link: $this.linker.link,
-        add: $this.linker.add,
-        same: $this.linker.same,
-        open: $this.open,
-        modal: $this.modal,
-        event: $this.event,
-        reload: $this.viewReload,
-        close: $this.viewClose,
-        current: $this.current,
-        find: $this.find,
-        option: $this.option,
-        init: $this.init,
-        setup: $this.setup,
-        setupLayout: $this.setupLayout
+        configSetting: $webapp.configSetting,
+        configText: $webapp.configText,
+        configEvent: $webapp.configEvent,
+        alert: $webapp.dialog.alert,
+        confirm: $webapp.dialog.confirm,
+        message: $webapp.dialog.message,
+        loading: function () {
+            return $webapp.loadingTip.show();
+        },
+        hash: $webapp.linker.hash,
+        link: $webapp.linker.link,
+        add: $webapp.linker.add,
+        same: $webapp.linker.same,
+        open: $webapp.openWindow,
+        modal: $webapp.modalWindow,
+        reload: $webapp.viewReload,
+        close: $webapp.viewClose,
+        event: $webapp.viewEvent,
+        current: $webapp.currentViewNode,
+        find: $webapp.currentViewNodeFind,
+        setup: $webapp.setup,
+        setupLayout: $webapp.setupLayout
     };
 })();
