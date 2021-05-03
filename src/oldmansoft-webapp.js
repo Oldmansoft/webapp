@@ -1,5 +1,5 @@
 ﻿/*
-* v1.0.1
+* v1.1.0
 * https://github.com/Oldmansoft/webapp
 * Copyright 2016 Oldmansoft, Inc; http://www.apache.org/licenses/LICENSE-2.0
 */
@@ -44,9 +44,11 @@ window.oldmansoft.webapp = new (function () {
             }
             this.execute = function () {
                 var argus = Array.from(arguments),
-                    i;
+                    i,
+                    result;
                 for (i = 0; i < list.length; i++) {
-                    if (list[i].apply(null, argus) === false) return false;
+                    result = list[i].apply(null, argus);
+                    if (result != undefined) return result;
                 }
             }
             this.clone = function () {
@@ -998,7 +1000,7 @@ window.oldmansoft.webapp = new (function () {
                     data = json.data ? json.data : json.Data,
                     renew = json.renew ? json.renew : json.Renew;
                 if (data) {
-                    variables.event.formDealCustomized.execute(data);
+                    variables.event.form.dealCustomized.execute(data);
                 }
 
                 if (path) {
@@ -1184,8 +1186,10 @@ window.oldmansoft.webapp = new (function () {
                     } else {
                         form.addClass("not-ready");
                     }
+                    if (variables.event.form.verify.completed.execute(form, valid) === false) return false;
                     return valid;
                 }
+                if (variables.event.form.verify.before.execute(form) === false) return false;
                 return check();
             },
             getFormData: function (form) {
@@ -1241,18 +1245,23 @@ window.oldmansoft.webapp = new (function () {
                     action = form.attr("action"),
                     formData = util.form.getFormData(form),
                     target = form.attr("target"),
-                    loading;
+                    loading,
+                    beforeResult;
+                beforeResult = variables.event.form.submit.before.execute(form);
+                if (beforeResult === false) return false;
+                if (beforeResult === true) return;
                 if (target == "_none") return;
                 if (target == "_blank") return;
+                if (!util.form.verify(form)) return false;
+
                 if (target == "_open") {
                     $app.open(action, util.form.serialize(formData));
                     return false;
                 }
-                if (target && target[0] != "_") {
-                    if ($webapp.currentViewNodeFind(target).length == 0) return;
+                if (target && target[0] != "_" && $webapp.currentViewNodeFind(target).length == 0) {
+                    return;
                 }
 
-                if (!util.form.verify(form)) return false;
                 loading = $webapp.loadingTip.show();
                 $.ajax({
                     url: action ? action : variables.defaultHref,
@@ -1277,6 +1286,8 @@ window.oldmansoft.webapp = new (function () {
                             }
                         }
                     }
+
+                    variables.event.form.submit.after.execute(form, content, textStatus, jqXHR);
                     if (type == "application/json") {
                         util.deal.json(content);
                     } else {
@@ -1289,6 +1300,7 @@ window.oldmansoft.webapp = new (function () {
                         }
                         $webapp.refresh();
                     }
+                    variables.event.form.submit.completed.execute(form);
                 }).fail(function (jqXHR, textStatus, errorThrown) {
                     loading.hide();
                     $app.alert($(jqXHR.responseText).eq(1).text(), jqXHR.statusText);
@@ -1381,7 +1393,11 @@ window.oldmansoft.webapp = new (function () {
             unauthorized: new definition.action(),
             refresh: new definition.action(),
             visibleLoaded: new definition.action(),
-            formDealCustomized: new definition.action()
+            form: {
+                dealCustomized: new definition.action(),
+                verify: new definition.actionEvent(),
+                submit: new definition.actionEvent()
+            }
         },
         windowScrollBar: null,
         hrefTargetDealer: {
@@ -1841,7 +1857,13 @@ window.oldmansoft.webapp = new (function () {
                 variables.event.refresh.add(fn);
             }
             this.formDealCustomized = function (fn) {
-                variables.event.formDealCustomized.add(fn);
+                variables.event.form.dealCustomized.add(fn);
+            }
+            this.formSubmit = function () {
+                return variables.event.form.submit;
+            }
+            this.formVerify = function () {
+                return variables.event.form.verify;
             }
         }
     }
