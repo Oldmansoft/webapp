@@ -1,5 +1,5 @@
 ﻿/*
-* v1.1.0
+* v1.1.1
 * https://github.com/Oldmansoft/webapp
 * Copyright 2016 Oldmansoft, Inc; http://www.apache.org/licenses/LICENSE-2.0
 */
@@ -1669,6 +1669,9 @@ window.oldmansoft.webapp = new (function () {
             if (hash == "") return base;
             return base + "#" + hash;
         }
+        this.createHash = function (input) {
+            return new util.linkParser(input).getHash();
+        }
         this.hrefs = function () {
             return new util.linkParser(window.location.hash).getHrefs();
         }
@@ -1692,12 +1695,9 @@ window.oldmansoft.webapp = new (function () {
                 return variables.viewer.manager.get().href;
             }
             
-            var link = new util.linkParser(),
-                hash,
-                i;
-            for (i = 0; i < arguments.length; i++) {
-                link.add(arguments[i]);
-            }
+            var link = new util.linkParser(Array.from(arguments)),
+                hash;
+
             hash = link.getHash();
             window.location.hash = hash;
             if (hash == lastHash) {
