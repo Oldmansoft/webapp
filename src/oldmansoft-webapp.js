@@ -1,5 +1,5 @@
 ﻿/*
-* v1.0.0
+* v1.0.1
 * https://github.com/Oldmansoft/webapp
 * Copyright 2016 Oldmansoft, Inc; http://www.apache.org/licenses/LICENSE-2.0
 */
@@ -1123,7 +1123,8 @@ window.oldmansoft.webapp = new (function () {
                     image.src = dataUrl;
                 }
 
-                var attr, width, height, file, message, reader, i;
+                var attr, width, height, file, message, reader, i,
+                    element = this;
                 attr = $(this).attr("data-image");
                 if (!attr) return;
                 attr = attr.split("x");
@@ -1148,7 +1149,7 @@ window.oldmansoft.webapp = new (function () {
                     }
                     reader = new FileReader();
                     reader.onload = function (e) {
-                        render(this, file, e.target.result, width, height, message);
+                        render(element, file, e.target.result, width, height, message);
                     };
                     reader.readAsDataURL(file);
                 }
