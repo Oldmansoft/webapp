@@ -1,5 +1,5 @@
 ﻿/*
-* v1.1.1
+* v1.1.2
 * https://github.com/Oldmansoft/webapp
 * Copyright 2016 Oldmansoft, Inc; http://www.apache.org/licenses/LICENSE-2.0
 */
@@ -1567,7 +1567,7 @@ window.oldmansoft.webapp = new (function () {
                 }
             }
             if (title) {
-                builder.setHead(title);
+                builder.head(title);
             }
             builder.body(content);
             shield = new definition.shield(".dialog-ares", builder.getNode(), true, "dialog-background");
