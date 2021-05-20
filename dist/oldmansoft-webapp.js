@@ -1,5 +1,5 @@
 ﻿/*
-* v1.1.2
+* v1.1.3
 * https://github.com/Oldmansoft/webapp
 * Copyright 2016 Oldmansoft, Inc; http://www.apache.org/licenses/LICENSE-2.0
 */
@@ -51,13 +51,11 @@ window.oldmansoft.webapp = new (function () {
                     if (result != undefined) return result;
                 }
             }
-            this.clone = function () {
-                var result = new definition.action(),
-                    i;
+            this.copyTo = function (target) {
+                var i;
                 for (i = 0; i < list.length; i++) {
-                    result.add(list[i]);
+                    target.add(list[i]);
                 }
-                return result;
             }
         },
         actionEvent: function () {
@@ -342,19 +340,21 @@ window.oldmansoft.webapp = new (function () {
             function load(target) {
                 var type = target.data ? constant.loadType.post : constant.loadType.get;
                 state.loaded = true;
-                event.view = variables.event.globalView.clone();
+                event.view = new definition.viewEvent();
                 variables.event.loadedView = event.view;
 
                 if (content == undefined) {
                     event.load.before.execute(target);
                     util.load(target.node, href ? href : variables.defaultHref, target.data, type).done(function () {
                         event.load.after.execute(target);
+                        variables.event.globalView.copyTo(variables.event.loadedView);
                         variables.event.loadedView.load.execute(parameter);
                         target.active();
                         event.load.completed.execute(target);
                     });
                 } else {
                     target.node.append(content);
+                    variables.event.globalView.copyTo(variables.event.loadedView);
                     variables.event.loadedView.load.execute(parameter);
                     target.active();
                 }
@@ -425,13 +425,11 @@ window.oldmansoft.webapp = new (function () {
             this.unload = new definition.action();
             this.active = new definition.action();
             this.inactive = new definition.action();
-            this.clone = function () {
-                var result = new definition.viewEvent();
-                result.load = this.load.clone();
-                result.unload = this.unload.clone();
-                result.active = this.active.clone();
-                result.inactive = this.inactive.clone();
-                return result;
+            this.copyTo = function (target) {
+                this.load.copyTo(target.load);
+                this.unload.copyTo(target.unload);
+                this.active.copyTo(target.active);
+                this.inactive.copyTo(target.inactive);
             }
         },
         viewManager: function () {
