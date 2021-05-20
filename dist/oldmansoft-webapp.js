@@ -1,5 +1,5 @@
 ﻿/*
-* v1.1.3
+* v1.1.4
 * https://github.com/Oldmansoft/webapp
 * Copyright 2016 Oldmansoft, Inc; http://www.apache.org/licenses/LICENSE-2.0
 */
@@ -1614,7 +1614,7 @@ window.oldmansoft.webapp = new (function () {
                     custom.close(fn);
                 }
                 this.change = function (text) {
-                    builder.getElement().find(".dialog-body").text(text);
+                    builder.getNode().find(".dialog-body").text(text);
                 }
             }
         }
