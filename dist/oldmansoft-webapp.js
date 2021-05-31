@@ -1,5 +1,5 @@
 ﻿/*
-* v1.1.5
+* v1.2.0
 * https://github.com/Oldmansoft/webapp
 * Copyright 2016 Oldmansoft, Inc; http://www.apache.org/licenses/LICENSE-2.0
 */
@@ -36,6 +36,73 @@ window.oldmansoft.webapp = new (function () {
     };
 
     definition = {
+        delay: function () {
+            var lates = [];
+
+            function get(key) {
+                if (lates[key]) {
+                    return lates[key];
+                }
+                lates[key] = { read: false, list: null };
+                return lates[key];
+            }
+
+            this.ready = function (key) {
+                if (get(key).ready) return;
+                get(key).ready = true;
+
+                var list = get(key).list,
+                    i;
+
+                if (!list) return;
+                for (i = 0; i < list.length; i++) {
+                    list[i]();
+                }
+                get(key).list = null;
+            }
+            this.reset = function (key) {
+                delete lates[key];
+            }
+            this.execute = function (key, fn) {
+                if (get(key).ready) {
+                    fn();
+                } else {
+                    if (!get(key).list) get(key).list = [];
+                    get(key).list.push(fn);
+                }
+            }
+        },
+        loader: function () {
+            var has = [];
+
+            function execute(args, index, deferred) {
+                if (args.length == index + 1) {
+                    deferred.resolve();
+                } else {
+                    load(args, index + 1, deferred);
+                }
+            }
+            function load(args, index, deferred) {
+                if (has[args[index]]) {
+                    execute(args, index, deferred);
+                    return;
+                }
+                $.getScript(args[index], function () {
+                    has[args[index]] = true;
+                    execute(args, index, deferred);
+                });
+            }
+
+            this.script = function () {
+                var result = $.Deferred();
+                if (arguments.length == 0) {
+                    result.resolve();
+                } else {
+                    load(arguments, 0, result);
+                }
+                return result;
+            }
+        },
         action: function () {
             var list = [];
             this.add = function (fn) {
@@ -1963,6 +2030,10 @@ window.oldmansoft.webapp = new (function () {
         configSetting: $webapp.configSetting,
         configText: $webapp.configText,
         configEvent: $webapp.configEvent,
+        util: {
+            delay: new definition.delay(),
+            loader: new definition.loader()
+        },
         alert: $webapp.dialog.alert,
         confirm: $webapp.dialog.confirm,
         message: $webapp.dialog.message,
