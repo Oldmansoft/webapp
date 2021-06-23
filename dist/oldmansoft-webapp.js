@@ -1,5 +1,5 @@
 ﻿/*
-* v1.2.0
+* v1.3.0
 * https://github.com/Oldmansoft/webapp
 * Copyright 2016 Oldmansoft, Inc; http://www.apache.org/licenses/LICENSE-2.0
 */
@@ -382,9 +382,7 @@ window.oldmansoft.webapp = new (function () {
                 }
             }
             this.click = function (fn) {
-                node.on("click", function () {
-                    close(fn);
-                });
+                node.on("click", fn);
             }
             this.event = function () {
                 return event;
@@ -733,19 +731,21 @@ window.oldmansoft.webapp = new (function () {
                     shield = new definition.shield(".window-ares", view.node, true, "window-background");
                     if (!view.attach("force")) {
                         shield.click(function () {
-                            var view = views.pop().unload();
-                            if (views.count() == 0) {
-                                variables.viewer.manager.pop();
-                            } else {
-                                views.last().active();
-                            }
-                            if (view.attach("closed")) {
-                                if (view.attach("argus")) {
-                                    view.attach("closed").apply(null, view.attach("argus"));
+                            shield.close(null, function () {
+                                var view = views.pop().unload();
+                                if (views.count() == 0) {
+                                    variables.viewer.manager.pop();
                                 } else {
-                                    view.attach("closed")();
+                                    views.last().active();
                                 }
-                            }
+                                if (view.attach("closed")) {
+                                    if (view.attach("argus")) {
+                                        view.attach("closed").apply(null, view.attach("argus"));
+                                    } else {
+                                        view.attach("closed")();
+                                    }
+                                }
+                            });
                         });
                     }
                     view.attach("shield", shield);
@@ -1597,14 +1597,22 @@ window.oldmansoft.webapp = new (function () {
 
         this.custom = function (node) {
             var shield = new definition.shield(".dialog-ares", node, true, "dialog-background"),
-                index = list.length;
+                index = list.length,
+                force = false;
             list[index] = shield;
             shield.event().close.before.add(function () {
                 delete list[index];
             });
+            shield.click(function () {
+                if (!force) shield.close();
+            });
             return new function () {
                 this.close = function (fn) {
                     shield.close(null, fn);
+                }
+                this.force = function () {
+                    force = true;
+                    return this;
                 }
             }
         }
