@@ -1,5 +1,5 @@
 ﻿/*
-* v1.3.0
+* v1.3.1
 * https://github.com/Oldmansoft/webapp
 * Copyright 2016 Oldmansoft, Inc; http://www.apache.org/licenses/LICENSE-2.0
 */
@@ -340,7 +340,9 @@ window.oldmansoft.webapp = new (function () {
             var node = $("<div></div>").addClass("box-background"),
                 event = {
                     close: new definition.actionEvent()
-                };
+                },
+                centerNode,
+                centerContentNode;
 
             function close(fn) {
                 event.close.before.execute();
@@ -356,7 +358,11 @@ window.oldmansoft.webapp = new (function () {
 
             if (className) node.addClass(className);
             if (isMiddle) {
-                node.append($("<div></div>").addClass("layout-center").append($("<div></div>").addClass("layout-center-content").append(content)));
+                centerNode = $("<div></div>").addClass("layout-center");
+                centerContentNode = $("<div></div>").addClass("layout-center-content");
+                centerContentNode.append(content);
+                centerNode.append(centerContentNode);
+                node.append(centerNode);
             } else {
                 node.append(content);
             }
@@ -368,10 +374,7 @@ window.oldmansoft.webapp = new (function () {
             node.on("scroll", $webapp.refresh);
             node.fadeIn(200);
 
-            this.close = function (e, fn) {
-                if (e && e.target != e.currentTarget) {
-                    return;
-                }
+            this.close = function (fn) {
                 close(fn);
             }
             this.change = function (content) {
@@ -382,7 +385,13 @@ window.oldmansoft.webapp = new (function () {
                 }
             }
             this.click = function (fn) {
-                node.on("click", fn);
+                if (typeof (fn) != "function") return;
+                node.on("click", function (e) {
+                    if (e && e.target != e.currentTarget && (isMiddle && e.target != centerNode.get(0))) {
+                        return;
+                    }
+                    fn();
+                });
             }
             this.event = function () {
                 return event;
@@ -731,7 +740,7 @@ window.oldmansoft.webapp = new (function () {
                     shield = new definition.shield(".window-ares", view.node, true, "window-background");
                     if (!view.attach("force")) {
                         shield.click(function () {
-                            shield.close(null, function () {
+                            shield.close(function () {
                                 var view = views.pop().unload();
                                 if (views.count() == 0) {
                                     variables.viewer.manager.pop();
@@ -1574,8 +1583,8 @@ window.oldmansoft.webapp = new (function () {
                         var closeCallback = new definition.action(),
                             button = $("<button></button>").text(text).addClass(className);
 
-                        button.click(function (e) {
-                            shield.close(e, function () {
+                        button.click(function () {
+                            shield.close(function () {
                                 closeCallback.execute();
                             });
                         });
@@ -1608,7 +1617,7 @@ window.oldmansoft.webapp = new (function () {
             });
             return new function () {
                 this.close = function (fn) {
-                    shield.close(null, fn);
+                    shield.close(fn);
                 }
                 this.force = function () {
                     force = true;
@@ -1921,7 +1930,7 @@ window.oldmansoft.webapp = new (function () {
                 loading.before(data);
                 loading.remove();
                 $webapp.refresh(rangeNode);
-                variables.event.visibleLoaded.action();
+                variables.event.visibleLoaded.execute();
             });
         }
     }
