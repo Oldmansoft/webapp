@@ -1,5 +1,5 @@
 ﻿/*
-* v1.3.1
+* v1.3.2
 * https://github.com/Oldmansoft/webapp
 * Copyright 2016 Oldmansoft, Inc; http://www.apache.org/licenses/LICENSE-2.0
 */
@@ -1033,18 +1033,32 @@ window.oldmansoft.webapp = new (function () {
                     variables.event.loadTimeout.execute(node);
                     return;
                 }
-                response = $(jqXHR.responseText);
-                title = $("<h4></h4>").text(errorThrown);
-                content = $("<pre></pre>");
 
-                if (response[11] != null && response[11].nodeType == 8) {
-                    content.text(response[11].data);
+                title = $("<h4></h4>");
+                if (errorThrown) {
+                    title.text(errorThrown);
                 } else {
-                    content.text(response.eq(1).text());
+                    title.text(jqXHR.status);
+                }
+
+                content = $("<pre></pre>");
+                if (jqXHR.status == 404) {
+                    content.text("Not found: " + href);
+                } else if (jqXHR.getResponseHeader("content-type") == "text/plain") {
+                    content.text(jqXHR.responseText);
+                } else {
+                    response = $(jqXHR.responseText);
+                    if (response[11] != null && response[11].nodeType == 8) {
+                        content.text(response[11].data);
+                    } else {
+                        content.text(response.eq(1).text());
+                    }
                 }
 
                 node.append(title).append(content);
-                loadFail.execute();
+                loadDone.execute();
+                loadFail.execute(jqXHR);
+                $webapp.refresh();
             });
             return new returnOption();
         },
@@ -1086,7 +1100,7 @@ window.oldmansoft.webapp = new (function () {
         },
         click: function (e) {
             var target = $(this).attr("target"),
-                href = $(this).attr('href');
+                href = $(this).attr("href");
 
             if (href == undefined || (href.length > 0 && href[0] == "#")) {
                 return;
@@ -1386,7 +1400,7 @@ window.oldmansoft.webapp = new (function () {
             if (!!window.ActiveXObject || "ActiveXObject" in window) {
                 $.ajaxSetup({ cache: false });
             }
-            $(document).on("click", "a", util.click);
+            $(document).on("click", "a,.a", util.click);
             $(document).on("submit", "form", util.form.submit);
             $(document).on("click", ".webapp-close", function (e) {
                 e.preventDefault();
