@@ -1,5 +1,5 @@
 ﻿/*
-* v1.3.2
+* v1.3.3
 * https://github.com/Oldmansoft/webapp
 * Copyright 2016 Oldmansoft, Inc; http://www.apache.org/licenses/LICENSE-2.0
 */
@@ -2061,6 +2061,10 @@ window.oldmansoft.webapp = new (function () {
         configSetting: $webapp.configSetting,
         configText: $webapp.configText,
         configEvent: $webapp.configEvent,
+        definition: {
+            action: definition.action,
+            actionEvent: definition.actionEvent
+        },
         util: {
             delay: new definition.delay(),
             loader: new definition.loader()
