@@ -1,5 +1,5 @@
 ﻿/*
-* v1.3.3
+* v1.3.4
 * https://github.com/Oldmansoft/webapp
 * Copyright 2016 Oldmansoft, Inc; http://www.apache.org/licenses/LICENSE-2.0
 */
@@ -667,7 +667,7 @@ window.oldmansoft.webapp = new (function () {
             this.close = function () {
                 var argus = Array.from(arguments),
                     closed = new definition.action();
-                views.last().attach("shield").close(null, function () {
+                views.last().attach("shield").close(function () {
                     var view = views.pop().unload();
                     if (views.count() == 0) {
                         variables.viewer.manager.pop();
@@ -1699,7 +1699,7 @@ window.oldmansoft.webapp = new (function () {
             var builder = new elementBuilder(),
                 custom;
             builder.body(content);
-            custom = $webapp.dialog.custom(builder.getNode());
+            custom = $webapp.dialog.custom(builder.getNode()).force();
             return new function () {
                 this.close = function (fn) {
                     custom.close(fn);
