@@ -1,5 +1,5 @@
 ﻿/*
-* v1.3.4
+* v1.3.5
 * https://github.com/Oldmansoft/webapp
 * Copyright 2016 Oldmansoft, Inc; http://www.apache.org/licenses/LICENSE-2.0
 */
@@ -1194,10 +1194,11 @@ window.oldmansoft.webapp = new (function () {
                             canvas = document.createElement("canvas");
                             ctx = canvas.getContext("2d");
 
-                            if (image.width >= image.height && image.width > width) {
+                            if (image.width > width) {
                                 image.height *= width / image.width;
                                 image.width = width;
-                            } else if (image.width <= image.height && image.height > height) {
+                            }
+                            if (image.height > height) {
                                 image.width *= height / image.height;
                                 image.height = height;
                             }
@@ -1205,7 +1206,7 @@ window.oldmansoft.webapp = new (function () {
                             canvas.height = image.height;
 
                             ctx.drawImage(image, 0, 0, image.width, image.height);
-                            blob = file.type == "image/jpeg" ? dataURL2Blob(canvas.toDataURL("image/jpeg", 0.95)) : dataURL2Blob(canvas.toDataURL(file.type));
+                            blob = file.type == "image/jpeg" ? dataURL2Blob(canvas.toDataURL("image/jpeg", 0.94)) : dataURL2Blob(canvas.toDataURL(file.type));
                         }
 
                         appendFileToImages(element, file, blob, message);
