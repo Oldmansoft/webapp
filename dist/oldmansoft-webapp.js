@@ -1,5 +1,5 @@
 ﻿/*
-* v1.3.5
+* v1.3.6
 * https://github.com/Oldmansoft/webapp
 * Copyright 2016 Oldmansoft, Inc; http://www.apache.org/licenses/LICENSE-2.0
 */
@@ -1062,6 +1062,12 @@ window.oldmansoft.webapp = new (function () {
             });
             return new returnOption();
         },
+        path_combine: function (path, parameter) {
+            if (parameter && path.indexOf("?") == -1) {
+                return path + "?" + parameter;
+            }
+            return path + parameter;
+        },
         deal: {
             json: function (json) {
                 var text = json.text ? json.text : json.Text;
@@ -1347,6 +1353,18 @@ window.oldmansoft.webapp = new (function () {
                     $app.open(action, util.form.serialize(formData));
                     return false;
                 }
+                if (target == "_same") {
+                    $app.same(util.path_combine(action, util.form.serialize(formData)));
+                    return false;
+                }
+                if (target == "_add") {
+                    $app.add(util.path_combine(action, util.form.serialize(formData)));
+                    return false;
+                }
+                if (target == "_link") {
+                    $app.link(util.path_combine(action, util.form.serialize(formData)));
+                    return false;
+                }
                 if (target && target[0] != "_" && $webapp.currentViewNodeFind(target).length == 0) {
                     return;
                 }
@@ -1619,8 +1637,15 @@ window.oldmansoft.webapp = new (function () {
             }
         }
 
-        this.custom = function (node) {
-            var shield = new definition.shield(".dialog-ares", node, true, "dialog-background"),
+        this.custom = function (node, className, middle) {
+            if (className == undefined || $.trim(className) == "") {
+                className = "dialog-background";
+            } else {
+                className = "dialog-background " + className;
+            }
+            if (middle == undefined) middle = true;
+
+            var shield = new definition.shield(".dialog-ares", node, middle, className),
                 index = list.length,
                 force = false;
             list[index] = shield;
