@@ -1,5 +1,5 @@
 ﻿/*
-* v1.3.6
+* v1.3.7
 * https://github.com/Oldmansoft/webapp
 * Copyright 2016 Oldmansoft, Inc; http://www.apache.org/licenses/LICENSE-2.0
 */
@@ -1323,9 +1323,10 @@ window.oldmansoft.webapp = new (function () {
                 });
                 form.find("select").each(function () {
                     var input = $(this),
-                        name = input.attr("name");
+                        name = input.attr("name"),
+                        value = input.val();
                     if (!name || input.prop("readonly") || input.prop("disabled")) return;
-                    data.append(name, input.val());
+                    if (value != null) data.append(name, value);
                 });
                 form.find("textarea").each(function () {
                     var input = $(this),
